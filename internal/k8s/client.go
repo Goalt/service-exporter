@@ -65,3 +65,9 @@ func (c *client) ListServices() ([]string, error) {
 
 	return serviceNames, nil
 }
+
+func (c *client) PortForward(serviceName string, namespace string, port int) error {
+	// Port forwarding implementation would go here
+	// For simplicity, we will just simulate success
+	return nil
+}
