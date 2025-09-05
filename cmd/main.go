@@ -15,8 +15,29 @@ func main() {
 	fmt.Println("🚀 Service Exporter - Kubernetes Service Port Forwarding with ngrok")
 	fmt.Println("================================================================")
 
-	// Initialize the service
-	svc := service.NewMockService()
+	// Initialize the service based on environment or configuration
+	var svc service.Service
+	var err error
+	
+	// Check if we should use mock service (for demo/testing) or real k8s service
+	if os.Getenv("USE_MOCK") == "true" {
+		fmt.Println("📋 Using mock Kubernetes service for demonstration...")
+		svc = service.NewMockService()
+	} else {
+		fmt.Println("📋 Connecting to Kubernetes cluster...")
+		namespace := os.Getenv("K8S_NAMESPACE")
+		if namespace == "" {
+			namespace = "default"
+		}
+		
+		svc, err = service.NewKubernetesService(namespace)
+		if err != nil {
+			fmt.Printf("❌ Failed to connect to Kubernetes cluster: %v\n", err)
+			fmt.Println("💡 Falling back to mock service for demonstration...")
+			fmt.Println("   Set USE_MOCK=true to explicitly use mock service")
+			svc = service.NewMockService()
+		}
+	}
 
 	// Setup graceful shutdown handling
 	sigChan := make(chan os.Signal, 1)

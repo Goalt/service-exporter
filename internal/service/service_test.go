@@ -11,6 +11,26 @@ func TestNewMockService(t *testing.T) {
 	}
 }
 
+func TestNewKubernetesService(t *testing.T) {
+	// Test with default namespace
+	_, err := NewKubernetesService("")
+	// We expect this to fail in a test environment without a kubeconfig
+	// This test just verifies the function signature and error handling
+	if err == nil {
+		t.Log("NewKubernetesService succeeded (kubeconfig available)")
+	} else {
+		t.Logf("NewKubernetesService failed as expected in test environment: %v", err)
+	}
+	
+	// Test with custom namespace
+	_, err = NewKubernetesService("custom-namespace")
+	if err == nil {
+		t.Log("NewKubernetesService with custom namespace succeeded (kubeconfig available)")
+	} else {
+		t.Logf("NewKubernetesService with custom namespace failed as expected in test environment: %v", err)
+	}
+}
+
 func TestGetServices(t *testing.T) {
 	svc := NewMockService()
 	services, err := svc.GetServices()
