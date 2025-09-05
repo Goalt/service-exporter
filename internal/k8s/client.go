@@ -91,7 +91,7 @@ func (c *client) PortForward(serviceName string, namespace string, localPort int
 
 	// Use the first port of the service
 	servicePort := svc.Spec.Ports[0]
-	
+
 	// Find pods that match the service selector
 	pods, err := c.findPodsForService(svc)
 	if err != nil {
@@ -104,7 +104,7 @@ func (c *client) PortForward(serviceName string, namespace string, localPort int
 
 	// Use the first available pod
 	pod := pods[0]
-	
+
 	// Determine the target port on the pod
 	targetPort := servicePort.TargetPort.IntVal
 	if targetPort == 0 {
@@ -133,7 +133,7 @@ func (c *client) PortForward(serviceName string, namespace string, localPort int
 	readyCh := make(chan struct{})
 
 	ports := []string{fmt.Sprintf("%d:%d", localPort, targetPort)}
-	
+
 	pf, err := portforward.New(dialer, ports, stopCh, readyCh, io.Discard, io.Discard)
 	if err != nil {
 		return fmt.Errorf("failed to create port forwarder: %w", err)
@@ -160,7 +160,7 @@ func (c *client) PortForward(serviceName string, namespace string, localPort int
 func (c *client) findPodsForService(svc *corev1.Service) ([]corev1.Pod, error) {
 	// Convert service selector to label selector string
 	labelSelector := metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: svc.Spec.Selector})
-	
+
 	pods, err := c.clientset.CoreV1().Pods(svc.Namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})

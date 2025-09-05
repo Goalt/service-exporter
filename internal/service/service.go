@@ -55,7 +55,7 @@ func (m *service) StartPortForwarding(serviceName string) (int, error) {
 
 	// Start port forwarding using the Kubernetes client
 	fmt.Printf("🔄 Starting port forwarding for service '%s' in namespace '%s' on local port %d...\n", actualServiceName, namespace, localPort)
-	
+
 	err = m.client.PortForward(actualServiceName, namespace, localPort)
 	if err != nil {
 		return 0, fmt.Errorf("failed to start port forwarding: %w", err)
@@ -81,7 +81,7 @@ func (m *service) parseServiceName(serviceName string) (string, string, error) {
 	actualServiceName := serviceName[:nsIndex]
 	namespaceStart := nsIndex + 6 // len(" (ns: ")
 	namespaceEnd := strings.LastIndex(serviceName, ")")
-	
+
 	if namespaceEnd == -1 || namespaceEnd <= namespaceStart {
 		return "", "", fmt.Errorf("invalid service name format: %s", serviceName)
 	}
