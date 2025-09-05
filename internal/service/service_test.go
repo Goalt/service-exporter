@@ -73,3 +73,37 @@ func TestCreateNgrokSession(t *testing.T) {
 		t.Errorf("URL should have format https://xxxxx.ngrok.io, got %s", url)
 	}
 }
+
+func TestCleanup(t *testing.T) {
+	svc := NewMockService().(*MockService)
+	
+	// Start some services to cleanup
+	_, err := svc.StartPortForwarding("test-service")
+	if err != nil {
+		t.Fatalf("StartPortForwarding should not return an error: %v", err)
+	}
+	
+	_, err = svc.CreateNgrokSession(8080)
+	if err != nil {
+		t.Fatalf("CreateNgrokSession should not return an error: %v", err)
+	}
+	
+	// Test cleanup
+	err = svc.Cleanup()
+	if err != nil {
+		t.Fatalf("Cleanup should not return an error: %v", err)
+	}
+	
+	// Verify cleanup cleared the state
+	if svc.activeService != "" {
+		t.Error("activeService should be empty after cleanup")
+	}
+	
+	if svc.activePort != 0 {
+		t.Error("activePort should be 0 after cleanup")
+	}
+	
+	if svc.activeNgrokURL != "" {
+		t.Error("activeNgrokURL should be empty after cleanup")
+	}
+}

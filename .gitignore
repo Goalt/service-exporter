@@ -17,6 +17,7 @@ go.work
 # Built binaries
 main
 service-exporter
+serviceexporter
 
 # IDE files
 .vscode/

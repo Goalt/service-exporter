@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Goalt/service-exporter/internal/prompt"
 	"github.com/Goalt/service-exporter/internal/service"
@@ -14,6 +17,25 @@ func main() {
 
 	// Initialize the service
 	svc := service.NewMockService()
+
+	// Setup graceful shutdown handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Setup cleanup function
+	cleanup := func() {
+		if err := svc.Cleanup(); err != nil {
+			log.Printf("Error during cleanup: %v", err)
+		}
+		fmt.Println("\n👋 Goodbye!")
+		os.Exit(0)
+	}
+
+	// Handle signals in a goroutine
+	go func() {
+		<-sigChan
+		cleanup()
+	}()
 
 	// Step 1: Get list of Kubernetes services
 	fmt.Println("\n📋 Fetching available Kubernetes services...")
@@ -49,4 +71,8 @@ func main() {
 	fmt.Printf("Local Port: %d\n", port)
 	fmt.Printf("Public URL: %s\n", ngrokURL)
 	fmt.Println("\nYou can now access your service via the public URL above!")
+	fmt.Println("\n📌 Press Ctrl+C to gracefully shutdown and cleanup resources...")
+
+	// Keep the program running until interrupted
+	select {}
 }
