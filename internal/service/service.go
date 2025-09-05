@@ -6,35 +6,24 @@ import (
 	"time"
 )
 
-// Service defines the interface for Kubernetes service operations
-type Service interface {
-	// GetServices returns a list of available Kubernetes services
-	GetServices() ([]string, error)
-
-	// StartPortForwarding starts port forwarding for the specified service
-	StartPortForwarding(serviceName string) (int, error)
-
-	// CreateNgrokSession creates an ngrok session for the forwarded port
-	CreateNgrokSession(port int) (string, error)
-
-	// Cleanup performs graceful shutdown of all active sessions
-	Cleanup() error
-}
-
-// MockService implements the Service interface with mocked functionality
-type MockService struct {
+// service implements the Service interface with mocked functionality
+type service struct {
 	activeService  string
 	activePort     int
 	activeNgrokURL string
+
+	client K8s
 }
 
-// NewMockService creates a new mock service instance
-func NewMockService() Service {
-	return &MockService{}
+// NewService creates a new service instance
+func NewService(client K8s) Service {
+	return &service{
+		client: client,
+	}
 }
 
 // GetServices returns a mocked list of Kubernetes services
-func (m *MockService) GetServices() ([]string, error) {
+func (m *service) GetServices() ([]string, error) {
 	// Simulate some delay
 	time.Sleep(500 * time.Millisecond)
 
@@ -51,7 +40,7 @@ func (m *MockService) GetServices() ([]string, error) {
 }
 
 // StartPortForwarding simulates starting port forwarding for a service
-func (m *MockService) StartPortForwarding(serviceName string) (int, error) {
+func (m *service) StartPortForwarding(serviceName string) (int, error) {
 	// Simulate some delay
 	time.Sleep(1 * time.Second)
 
@@ -68,7 +57,7 @@ func (m *MockService) StartPortForwarding(serviceName string) (int, error) {
 }
 
 // CreateNgrokSession simulates creating an ngrok session
-func (m *MockService) CreateNgrokSession(port int) (string, error) {
+func (m *service) CreateNgrokSession(port int) (string, error) {
 	// Simulate some delay
 	time.Sleep(2 * time.Second)
 
@@ -85,7 +74,7 @@ func (m *MockService) CreateNgrokSession(port int) (string, error) {
 }
 
 // Cleanup performs graceful shutdown of all active sessions
-func (m *MockService) Cleanup() error {
+func (m *service) Cleanup() error {
 	fmt.Println("\n🔄 Performing graceful shutdown...")
 
 	if m.activeNgrokURL != "" {

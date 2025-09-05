@@ -5,14 +5,14 @@ import (
 )
 
 func TestNewMockService(t *testing.T) {
-	svc := NewMockService()
+	svc := NewService(nil)
 	if svc == nil {
 		t.Fatal("NewMockService should return a non-nil service")
 	}
 }
 
 func TestGetServices(t *testing.T) {
-	svc := NewMockService()
+	svc := NewService(nil)
 	services, err := svc.GetServices()
 
 	if err != nil {
@@ -44,7 +44,7 @@ func TestGetServices(t *testing.T) {
 }
 
 func TestStartPortForwarding(t *testing.T) {
-	svc := NewMockService()
+	svc := NewService(nil)
 	port, err := svc.StartPortForwarding("test-service")
 
 	if err != nil {
@@ -57,7 +57,7 @@ func TestStartPortForwarding(t *testing.T) {
 }
 
 func TestCreateNgrokSession(t *testing.T) {
-	svc := NewMockService()
+	svc := NewService(nil)
 	url, err := svc.CreateNgrokSession(8080)
 
 	if err != nil {
@@ -75,7 +75,7 @@ func TestCreateNgrokSession(t *testing.T) {
 }
 
 func TestCleanup(t *testing.T) {
-	svc := NewMockService().(*MockService)
+	svc := NewService(nil).(*service)
 
 	// Start some services to cleanup
 	_, err := svc.StartPortForwarding("test-service")
