@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+          - goos: windows
+            goarch: amd64
+            suffix: windows-amd64
+            ext: .exe
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    
+    - name: Download dependencies
+      run: go mod download
+    
+    - name: Build binary
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
+      run: |
+        BINARY_NAME="serviceexporter-${{ matrix.suffix }}${{ matrix.ext }}"
+        go build -ldflags="-s -w" -o "${BINARY_NAME}" ./cmd/main.go
+        echo "BINARY_NAME=${BINARY_NAME}" >> $GITHUB_ENV
+    
+    - name: Create checksum
+      run: |
+        if command -v sha256sum >/dev/null 2>&1; then
+          sha256sum "${BINARY_NAME}" > "${BINARY_NAME}.sha256"
+        else
+          shasum -a 256 "${BINARY_NAME}" > "${BINARY_NAME}.sha256"
+        fi
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./${{ env.BINARY_NAME }}
+        asset_name: ${{ env.BINARY_NAME }}
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Checksum
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./${{ env.BINARY_NAME }}.sha256
+        asset_name: ${{ env.BINARY_NAME }}.sha256
+        asset_content_type: text/plain
