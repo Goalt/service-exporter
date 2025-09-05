@@ -18,4 +18,7 @@ type Service interface {
 type K8s interface {
 	// ListServices lists all services in the Kubernetes cluster
 	ListServices() ([]string, error)
+
+	// PortForward creates a port-forward connection to a service
+	PortForward(serviceName string, namespace string, localPort int) error
 }

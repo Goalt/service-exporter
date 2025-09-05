@@ -17,6 +17,11 @@ func (m *mockK8sClient) ListServices() ([]string, error) {
 	return m.services, nil
 }
 
+func (m *mockK8sClient) PortForward(serviceName string, namespace string, localPort int) error {
+	// Mock implementation - just return the error if any
+	return m.err
+}
+
 func TestNewMockService(t *testing.T) {
 	mockClient := &mockK8sClient{}
 	svc := NewService(mockClient)
@@ -76,7 +81,8 @@ func TestGetServicesWithNilClient(t *testing.T) {
 func TestStartPortForwarding(t *testing.T) {
 	mockClient := &mockK8sClient{}
 	svc := NewService(mockClient)
-	port, err := svc.StartPortForwarding("test-service")
+	// Use the proper format with namespace
+	port, err := svc.StartPortForwarding("test-service (ns: default)")
 
 	if err != nil {
 		t.Fatalf("StartPortForwarding should not return an error: %v", err)
@@ -111,22 +117,19 @@ func TestCleanup(t *testing.T) {
 	svc := NewService(mockClient).(*service)
 
 	// Start some services to cleanup
-	_, err := svc.StartPortForwarding("test-service")
+	_, err := svc.StartPortForwarding("test-service (ns: default)")
 	if err != nil {
 		t.Fatalf("StartPortForwarding should not return an error: %v", err)
 	}
-
 	_, err = svc.CreateNgrokSession(8080)
 	if err != nil {
 		t.Fatalf("CreateNgrokSession should not return an error: %v", err)
 	}
-
 	// Test cleanup
 	err = svc.Cleanup()
 	if err != nil {
 		t.Fatalf("Cleanup should not return an error: %v", err)
 	}
-
 	// Verify cleanup cleared the state
 	if svc.activeService != "" {
 		t.Error("activeService should be empty after cleanup")

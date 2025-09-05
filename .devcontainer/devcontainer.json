@@ -25,8 +25,7 @@
 				"netcorext.uuid-generator",
 				"humao.rest-client",
 				"tooltitudeteam.tooltitude",
-				"766b.go-outliner",
-				"github.copilot-workspace"
+				"766b.go-outliner"
 			]
 		}
 	},
