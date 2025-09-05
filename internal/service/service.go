@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// service implements the Service interface with mocked functionality
+// service implements the Service interface for Kubernetes service operations
 type service struct {
 	activeService  string
 	activePort     int
@@ -22,21 +22,13 @@ func NewService(client K8s) Service {
 	}
 }
 
-// GetServices returns a mocked list of Kubernetes services
+// GetServices returns a list of Kubernetes services from the cluster
 func (m *service) GetServices() ([]string, error) {
-	// Simulate some delay
-	time.Sleep(500 * time.Millisecond)
-
-	services := []string{
-		"web-frontend",
-		"api-gateway",
-		"user-service",
-		"database-service",
-		"cache-service",
-		"notification-service",
+	if m.client == nil {
+		return nil, fmt.Errorf("kubernetes client not available")
 	}
 
-	return services, nil
+	return m.client.ListServices()
 }
 
 // StartPortForwarding simulates starting port forwarding for a service

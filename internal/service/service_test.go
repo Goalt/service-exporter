@@ -4,15 +4,41 @@ import (
 	"testing"
 )
 
+// mockK8sClient implements the K8s interface for testing
+type mockK8sClient struct {
+	services []string
+	err      error
+}
+
+func (m *mockK8sClient) ListServices() ([]string, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.services, nil
+}
+
 func TestNewMockService(t *testing.T) {
-	svc := NewService(nil)
+	mockClient := &mockK8sClient{}
+	svc := NewService(mockClient)
 	if svc == nil {
-		t.Fatal("NewMockService should return a non-nil service")
+		t.Fatal("NewService should return a non-nil service")
 	}
 }
 
 func TestGetServices(t *testing.T) {
-	svc := NewService(nil)
+	expectedServices := []string{
+		"web-frontend",
+		"api-gateway",
+		"user-service",
+		"database-service",
+		"cache-service",
+		"notification-service",
+	}
+
+	mockClient := &mockK8sClient{
+		services: expectedServices,
+	}
+	svc := NewService(mockClient)
 	services, err := svc.GetServices()
 
 	if err != nil {
@@ -21,15 +47,6 @@ func TestGetServices(t *testing.T) {
 
 	if len(services) == 0 {
 		t.Fatal("GetServices should return at least one service")
-	}
-
-	expectedServices := []string{
-		"web-frontend",
-		"api-gateway",
-		"user-service",
-		"database-service",
-		"cache-service",
-		"notification-service",
 	}
 
 	if len(services) != len(expectedServices) {
@@ -43,8 +60,22 @@ func TestGetServices(t *testing.T) {
 	}
 }
 
-func TestStartPortForwarding(t *testing.T) {
+func TestGetServicesWithNilClient(t *testing.T) {
 	svc := NewService(nil)
+	services, err := svc.GetServices()
+
+	if err == nil {
+		t.Fatal("GetServices should return an error when client is nil")
+	}
+
+	if services != nil {
+		t.Error("GetServices should return nil services when client is nil")
+	}
+}
+
+func TestStartPortForwarding(t *testing.T) {
+	mockClient := &mockK8sClient{}
+	svc := NewService(mockClient)
 	port, err := svc.StartPortForwarding("test-service")
 
 	if err != nil {
@@ -57,7 +88,8 @@ func TestStartPortForwarding(t *testing.T) {
 }
 
 func TestCreateNgrokSession(t *testing.T) {
-	svc := NewService(nil)
+	mockClient := &mockK8sClient{}
+	svc := NewService(mockClient)
 	url, err := svc.CreateNgrokSession(8080)
 
 	if err != nil {
@@ -75,7 +107,8 @@ func TestCreateNgrokSession(t *testing.T) {
 }
 
 func TestCleanup(t *testing.T) {
-	svc := NewService(nil).(*service)
+	mockClient := &mockK8sClient{}
+	svc := NewService(mockClient).(*service)
 
 	// Start some services to cleanup
 	_, err := svc.StartPortForwarding("test-service")
