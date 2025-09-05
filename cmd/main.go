@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/Goalt/service-exporter/internal/k8s"
+	"github.com/Goalt/service-exporter/internal/ngrok"
 	"github.com/Goalt/service-exporter/internal/prompt"
 	"github.com/Goalt/service-exporter/internal/service"
 )
@@ -20,8 +22,22 @@ func main() {
 	k8sClient, k8sCleanup := k8s.New()
 	defer k8sCleanup()
 
-	// Initialize the service
-	svc := service.NewService(k8sClient)
+	// Initialize the service with optional ngrok client
+	var svc service.Service
+	ngrokToken := os.Getenv("NGROK_AUTH_TOKEN")
+	if ngrokToken != "" {
+		fmt.Println("🔑 Found ngrok auth token, using real ngrok client")
+		ngrokClient, err := ngrok.NewClient(context.Background(), ngrokToken)
+		if err != nil {
+			log.Printf("⚠️  Failed to create ngrok client: %v. Using mock mode.", err)
+			svc = service.NewService(k8sClient)
+		} else {
+			svc = service.NewServiceWithNgrok(k8sClient, ngrokClient)
+		}
+	} else {
+		fmt.Println("ℹ️  No ngrok auth token found (set NGROK_AUTH_TOKEN environment variable for real tunnels)")
+		svc = service.NewService(k8sClient)
+	}
 
 	// Setup graceful shutdown handling
 	sigChan := make(chan os.Signal, 1)
