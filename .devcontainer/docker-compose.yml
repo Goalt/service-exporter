@@ -1,0 +1,10 @@
+services:
+  service-exporter-dev:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - /home/yury/.kube/config.nebula:/home/vscode/.kube/config
+      - /home/yury/.netrc:/home/vscode/.netrc
+      - ..:/workspace:cached
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -1,0 +1,48 @@
+{
+    "configurations": [
+        {
+            "name": "bot",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/bot/main.go",
+            "envFile": "${workspaceFolder}/.vscode/.env"
+        },
+        {
+            "name": "cli-create-survey",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/cli/",
+            "envFile": "${workspaceFolder}/.vscode/.env",
+            "args": ["survey-create", "/workspace/surveytests/1.json"]
+        },
+        {
+            "name": "cli-update-survey",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/cli/",
+            "envFile": "${workspaceFolder}/.vscode/.env",
+            "args": ["survey-update", "13847f79-3697-4192-9054-c95c2415b449", "/workspace/surveytests/1.json"],
+        },
+        {
+            "name": "cli-delete-survey-state",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/cli/",
+            "envFile": "${workspaceFolder}/.vscode/.cli.env",
+            "args": ["survey-state-delete", "0b8b2e8f-6b4e-4a0d-ac71-ca490bb98487", "0cb2b4bc-d59b-416c-87f8-250a9b5f335c"]
+        },
+        {
+            "name": "cli-dump-survey-state",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/cli/",
+            "envFile": "${workspaceFolder}/.vscode/.cli.env",
+            "args": ["survey-get-results"],
+        }
+    ]
+}

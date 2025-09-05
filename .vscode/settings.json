@@ -1,0 +1,13 @@
+{
+    "window.title": "service-exporter",
+
+    // Go Linter
+    "go.lintTool":"golangci-lint",
+    "go.lintFlags": [
+        "--fast"
+    ],
+    "go.testTimeout": "3000s",
+
+    // UML Preview
+    "plantuml.server": "https://www.plantuml.com/plantuml",
+}
