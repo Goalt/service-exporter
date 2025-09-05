@@ -31,6 +31,13 @@ func TestNewKubernetesService(t *testing.T) {
 	}
 }
 
+func TestKubernetesServiceImplementsInterface(t *testing.T) {
+	// This test verifies that KubernetesService implements the Service interface
+	// even if we can't instantiate it due to missing kubeconfig
+	var _ Service = (*KubernetesService)(nil)
+	t.Log("KubernetesService correctly implements Service interface")
+}
+
 func TestGetServices(t *testing.T) {
 	svc := NewMockService()
 	services, err := svc.GetServices()
