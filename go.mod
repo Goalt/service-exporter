@@ -1,6 +1,6 @@
 module github.com/Goalt/service-exporter
 
-go 1.23.11
+go 1.25.1
 
 require github.com/manifoldco/promptui v0.9.0
 
