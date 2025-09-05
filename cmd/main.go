@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Goalt/service-exporter/internal/k8s"
 	"github.com/Goalt/service-exporter/internal/prompt"
 	"github.com/Goalt/service-exporter/internal/service"
 )
@@ -15,8 +16,12 @@ func main() {
 	fmt.Println("🚀 Service Exporter - Kubernetes Service Port Forwarding with ngrok")
 	fmt.Println("================================================================")
 
+	// create Kubernetes client
+	k8sClient, k8sCleanup := k8s.New()
+	defer k8sCleanup()
+
 	// Initialize the service
-	svc := service.NewMockService()
+	svc := service.NewService(k8sClient)
 
 	// Setup graceful shutdown handling
 	sigChan := make(chan os.Signal, 1)
