@@ -30,23 +30,21 @@ func New(kubeconfigPath string) (*client, func(), error) {
 		// Fall back to default kubeconfig location
 		home, err := os.UserHomeDir()
 		if err != nil {
-			log.Printf("Warning: could not get home directory: %v\n", err)
 			return nil, func() {}, fmt.Errorf("kubeconfig path not provided and could not determine home directory")
 		}
+
 		kubeconfigPath = filepath.Join(home, ".kube", "config")
 	}
 
 	// Build config from kubeconfig file
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
-		log.Printf("Warning: could not build config from kubeconfig: %v\n", err)
 		return nil, func() {}, fmt.Errorf("failed to build kubeconfig from path %s: %w", kubeconfigPath, err)
 	}
 
 	// Create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Printf("Warning: could not create kubernetes client: %v\n", err)
 		return nil, func() {}, fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 

@@ -16,6 +16,7 @@ func NumberPrompt() (string, error) {
 		if err != nil {
 			return errors.New("Invalid number")
 		}
+
 		return nil
 	}
 

@@ -105,6 +105,7 @@ func (m *service) findAvailablePort() (int, error) {
 			return port, nil
 		}
 	}
+
 	return 0, fmt.Errorf("no available ports in range 8000-9000")
 }
 
