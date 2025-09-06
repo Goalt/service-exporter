@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -61,7 +62,7 @@ func (m *service) StartPortForwarding(serviceName string) (int, error) {
 	}
 
 	// Start port forwarding using the Kubernetes client
-	fmt.Printf("🔄 Starting port forwarding for service '%s' in namespace '%s' on local port %d...\n", actualServiceName, namespace, localPort)
+	log.Printf("🔄 Starting port forwarding for service '%s' in namespace '%s' on local port %d...\n", actualServiceName, namespace, localPort)
 
 	err = m.client.PortForward(actualServiceName, namespace, localPort)
 	if err != nil {
@@ -120,7 +121,7 @@ func (m *service) isPortAvailable(port int) bool {
 
 // CreateNgrokSession creates an ngrok session for the forwarded port
 func (m *service) CreateNgrokSession(port int) (string, error) {
-	fmt.Printf("🌐 Creating ngrok tunnel for port %d...\n", port)
+	log.Printf("🌐 Creating ngrok tunnel for port %d...\n", port)
 
 	// Use context.Background() since we don't have a context passed in
 	// In a real application, this should be passed from the caller
@@ -139,21 +140,21 @@ func (m *service) CreateNgrokSession(port int) (string, error) {
 
 // Cleanup performs graceful shutdown of all active sessions
 func (m *service) Cleanup() error {
-	fmt.Println("\n🔄 Performing graceful shutdown...")
+	log.Println("\n🔄 Performing graceful shutdown...")
 
 	if m.activeNgrokURL != "" {
-		fmt.Printf("🔌 Closing ngrok tunnel: %s\n", m.activeNgrokURL)
+		log.Printf("🔌 Closing ngrok tunnel: %s\n", m.activeNgrokURL)
 		if err := m.ngrokClient.Close(); err != nil {
-			fmt.Printf("Error closing ngrok client: %v\n", err)
+			log.Printf("Error closing ngrok client: %v\n", err)
 		}
 		m.activeNgrokURL = ""
 	}
 	if m.activeService != "" && m.activePort > 0 {
-		fmt.Printf("🔌 Stopping port forwarding for service '%s' on port %d\n", m.activeService, m.activePort)
+		log.Printf("🔌 Stopping port forwarding for service '%s' on port %d\n", m.activeService, m.activePort)
 		m.activeService = ""
 		m.activePort = 0
 	}
 
-	fmt.Println("✅ Graceful shutdown completed")
+	log.Println("✅ Graceful shutdown completed")
 	return nil
 }

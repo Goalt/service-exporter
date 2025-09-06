@@ -22,8 +22,8 @@ type Config struct {
 
 // loadConfig reads configuration from environment variables or prompts user for input
 func loadConfig() (*Config, error) {
-	fmt.Println("\n⚙️  Configuration Setup")
-	fmt.Println("=====================")
+	log.Println("\n⚙️  Configuration Setup")
+	log.Println("=====================")
 
 	// Ask user if they want to use defaults or provide manual input
 	useDefaults, err := prompt.UseDefaultsPrompt()
@@ -34,7 +34,7 @@ func loadConfig() (*Config, error) {
 	config := &Config{}
 
 	if useDefaults {
-		fmt.Println("\n📋 Using environment variables for configuration...")
+		log.Println("\n📋 Using environment variables for configuration...")
 		config.NgrokAuthToken = os.Getenv("NGROK_AUTH_TOKEN")
 		config.KubeconfigPath = os.Getenv("KUBECONFIG")
 
@@ -43,7 +43,7 @@ func loadConfig() (*Config, error) {
 			return nil, fmt.Errorf("❌ NGROK_AUTH_TOKEN environment variable is required when using default configuration")
 		}
 	} else {
-		fmt.Println("\n📝 Manual configuration mode...")
+		log.Println("\n📝 Manual configuration mode...")
 
 		// Prompt for ngrok auth token
 		config.NgrokAuthToken, err = prompt.NgrokTokenPrompt()
@@ -62,8 +62,8 @@ func loadConfig() (*Config, error) {
 }
 
 func main() {
-	fmt.Println("🚀 Service Exporter - Kubernetes Service Port Forwarding with ngrok")
-	fmt.Println("================================================================")
+	log.Println("🚀 Service Exporter - Kubernetes Service Port Forwarding with ngrok")
+	log.Println("================================================================")
 
 	// Load configuration from prompts or environment variables
 	config, err := loadConfig()
@@ -78,7 +78,7 @@ func main() {
 	}
 	defer k8sCleanup()
 
-	fmt.Println("🔑 Found ngrok auth token, creating ngrok client")
+	log.Println("🔑 Found ngrok auth token, creating ngrok client")
 	ngrokClient, err := ngrok.NewClient(context.Background(), config.NgrokAuthToken)
 	if err != nil {
 		log.Fatalf("❌ Failed to create ngrok client: %v", err)
@@ -95,7 +95,7 @@ func main() {
 		if err := svc.Cleanup(); err != nil {
 			log.Printf("Error during cleanup: %v", err)
 		}
-		fmt.Println("\n👋 Goodbye!")
+		log.Println("\n👋 Goodbye!")
 		os.Exit(0)
 	}
 
@@ -106,7 +106,7 @@ func main() {
 	}()
 
 	// Step 1: Get list of Kubernetes services
-	fmt.Println("\n📋 Fetching available Kubernetes services...")
+	log.Println("\n📋 Fetching available Kubernetes services...")
 	services, err := svc.GetServices()
 	if err != nil {
 		log.Fatalf("Failed to get services: %v", err)
@@ -118,7 +118,7 @@ func main() {
 		log.Fatalf("Service selection failed: %v", err)
 	}
 
-	fmt.Printf("\n✅ Selected service: %s\n", selectedService)
+	log.Printf("\n✅ Selected service: %s\n", selectedService)
 
 	// Step 3: Start port forwarding
 	port, err := svc.StartPortForwarding(selectedService)
@@ -133,13 +133,13 @@ func main() {
 	}
 
 	// Display final result
-	fmt.Println("\n🎉 Setup complete!")
-	fmt.Println("==================")
-	fmt.Printf("Service: %s\n", selectedService)
-	fmt.Printf("Local Port: %d\n", port)
-	fmt.Printf("Public URL: %s\n", ngrokURL)
-	fmt.Println("\nYou can now access your service via the public URL above!")
-	fmt.Println("\n📌 Press Ctrl+C to gracefully shutdown and cleanup resources...")
+	log.Println("\n🎉 Setup complete!")
+	log.Println("==================")
+	log.Printf("Service: %s\n", selectedService)
+	log.Printf("Local Port: %d\n", port)
+	log.Printf("Public URL: %s\n", ngrokURL)
+	log.Println("\nYou can now access your service via the public URL above!")
+	log.Println("\n📌 Press Ctrl+C to gracefully shutdown and cleanup resources...")
 
 	// Keep the program running until interrupted
 	select {}
