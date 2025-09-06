@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
     volumes:
-      - /home/yury/.kube/config.nebula:/home/vscode/.kube/config
-      - /home/yury/.netrc:/home/vscode/.netrc
+      - /Users/user/.kube/config.nebula:/home/vscode/.kube/config
+      - /Users/user/.netrc:/home/vscode/.netrc
       - ..:/workspace:cached
       - /var/run/docker.sock:/var/run/docker.sock
