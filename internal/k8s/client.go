@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,7 +30,7 @@ func New(kubeconfigPath string) (*client, func(), error) {
 		// Fall back to default kubeconfig location
 		home, err := os.UserHomeDir()
 		if err != nil {
-			fmt.Printf("Warning: could not get home directory: %v\n", err)
+			log.Printf("Warning: could not get home directory: %v\n", err)
 			return nil, func() {}, fmt.Errorf("kubeconfig path not provided and could not determine home directory")
 		}
 		kubeconfigPath = filepath.Join(home, ".kube", "config")
@@ -38,14 +39,14 @@ func New(kubeconfigPath string) (*client, func(), error) {
 	// Build config from kubeconfig file
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
-		fmt.Printf("Warning: could not build config from kubeconfig: %v\n", err)
+		log.Printf("Warning: could not build config from kubeconfig: %v\n", err)
 		return nil, func() {}, fmt.Errorf("failed to build kubeconfig from path %s: %w", kubeconfigPath, err)
 	}
 
 	// Create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		fmt.Printf("Warning: could not create kubernetes client: %v\n", err)
+		log.Printf("Warning: could not create kubernetes client: %v\n", err)
 		return nil, func() {}, fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
@@ -141,14 +142,14 @@ func (c *client) PortForward(serviceName string, namespace string, localPort int
 	// Start port forwarding in a goroutine
 	go func() {
 		if err := pf.ForwardPorts(); err != nil {
-			fmt.Printf("Port forwarding error: %v\n", err)
+			log.Printf("Port forwarding error: %v\n", err)
 		}
 	}()
 
 	// Wait for port forwarding to be ready or timeout
 	select {
 	case <-readyCh:
-		fmt.Printf("Port forwarding ready from localhost:%d to pod %s:%d\n", localPort, pod.Name, targetPort)
+		log.Printf("Port forwarding ready from localhost:%d to pod %s:%d\n", localPort, pod.Name, targetPort)
 		return nil
 	case <-time.After(30 * time.Second):
 		close(stopCh)
