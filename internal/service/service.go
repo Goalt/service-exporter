@@ -6,9 +6,13 @@ import (
 	"net"
 	"strconv"
 	"strings"
-
-	"github.com/Goalt/service-exporter/internal/ngrok"
 )
+
+// NgrokClient defines the interface for ngrok client operations
+type NgrokClient interface {
+	StartTunnel(ctx context.Context, port int) (string, error)
+	Close() error
+}
 
 // service implements the Service interface for Kubernetes service operations
 type service struct {
@@ -17,18 +21,11 @@ type service struct {
 	activeNgrokURL string
 
 	client      K8s
-	ngrokClient *ngrok.Client
+	ngrokClient NgrokClient
 }
 
 // NewService creates a new service instance
-func NewService(client K8s) Service {
-	return &service{
-		client: client,
-	}
-}
-
-// NewServiceWithNgrok creates a new service instance with an ngrok client
-func NewServiceWithNgrok(client K8s, ngrokClient *ngrok.Client) Service {
+func NewService(client K8s, ngrokClient NgrokClient) Service {
 	return &service{
 		client:      client,
 		ngrokClient: ngrokClient,
@@ -123,17 +120,6 @@ func (m *service) isPortAvailable(port int) bool {
 
 // CreateNgrokSession creates an ngrok session for the forwarded port
 func (m *service) CreateNgrokSession(port int) (string, error) {
-	if m.ngrokClient == nil {
-		// Fall back to mock implementation for backwards compatibility
-		fmt.Printf("🌐 Creating ngrok tunnel for port %d...\n", port)
-
-		// Generate a mock ngrok URL for testing/compatibility
-		mockURL := fmt.Sprintf("https://mock%d.ngrok.io", port)
-		m.activeNgrokURL = mockURL
-
-		return mockURL, nil
-	}
-
 	fmt.Printf("🌐 Creating ngrok tunnel for port %d...\n", port)
 
 	// Use context.Background() since we don't have a context passed in
@@ -157,10 +143,8 @@ func (m *service) Cleanup() error {
 
 	if m.activeNgrokURL != "" {
 		fmt.Printf("🔌 Closing ngrok tunnel: %s\n", m.activeNgrokURL)
-		if m.ngrokClient != nil {
-			if err := m.ngrokClient.Close(); err != nil {
-				fmt.Printf("Error closing ngrok client: %v\n", err)
-			}
+		if err := m.ngrokClient.Close(); err != nil {
+			fmt.Printf("Error closing ngrok client: %v\n", err)
 		}
 		m.activeNgrokURL = ""
 	}

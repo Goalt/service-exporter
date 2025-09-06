@@ -22,22 +22,19 @@ func main() {
 	k8sClient, k8sCleanup := k8s.New()
 	defer k8sCleanup()
 
-	// Initialize the service with optional ngrok client
-	var svc service.Service
+	// Initialize the service with required ngrok client
 	ngrokToken := os.Getenv("NGROK_AUTH_TOKEN")
-	if ngrokToken != "" {
-		fmt.Println("🔑 Found ngrok auth token, using real ngrok client")
-		ngrokClient, err := ngrok.NewClient(context.Background(), ngrokToken)
-		if err != nil {
-			log.Printf("⚠️  Failed to create ngrok client: %v. Using mock mode.", err)
-			svc = service.NewService(k8sClient)
-		} else {
-			svc = service.NewServiceWithNgrok(k8sClient, ngrokClient)
-		}
-	} else {
-		fmt.Println("ℹ️  No ngrok auth token found (set NGROK_AUTH_TOKEN environment variable for real tunnels)")
-		svc = service.NewService(k8sClient)
+	if ngrokToken == "" {
+		log.Fatalf("❌ NGROK_AUTH_TOKEN environment variable is required")
 	}
+
+	fmt.Println("🔑 Found ngrok auth token, creating ngrok client")
+	ngrokClient, err := ngrok.NewClient(context.Background(), ngrokToken)
+	if err != nil {
+		log.Fatalf("❌ Failed to create ngrok client: %v", err)
+	}
+
+	svc := service.NewService(k8sClient, ngrokClient)
 
 	// Setup graceful shutdown handling
 	sigChan := make(chan os.Signal, 1)
