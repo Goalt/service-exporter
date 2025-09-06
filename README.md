@@ -184,6 +184,7 @@ You can now access your service via the public URL above!
 3. Copy your authentication token
 
 ## Development
+Repository contains configs for devcontainer with all necessary setup.
 
 ### Building
 
