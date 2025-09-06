@@ -2,7 +2,130 @@
 
 🚀 Kubernetes Service Port Forwarding with ngrok
 
+[![Latest Release](https://img.shields.io/github/v/release/Goalt/service-exporter?label=latest)](https://github.com/Goalt/service-exporter/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Goalt/service-exporter/total)](https://github.com/Goalt/service-exporter/releases)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Goalt/service-exporter)](https://github.com/Goalt/service-exporter/blob/main/go.mod)
+
 A CLI tool that helps you expose Kubernetes services to the internet using ngrok tunnels with interactive configuration.
+
+## Table of Contents
+
+- [Demo](#demo)
+- [Installation](#installation) 
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [Prerequisites](#prerequisites)
+- [Development](#development)
+
+## Demo
+
+![Service Exporter Demo](https://via.placeholder.com/800x450/1a1a1a/00d4aa?text=Service+Exporter+Demo+GIF)
+
+*Interactive demo showing the complete workflow from service selection to ngrok tunnel creation*
+
+> 📹 **Want to record a real demo?** Use [asciinema](https://asciinema.org/) or [vhs](https://github.com/charmbracelet/vhs) to create an animated terminal recording!
+
+Watch how Service Exporter:
+1. 🔧 Prompts for configuration (environment variables or manual input)
+2. 📋 Lists available Kubernetes services in your cluster
+3. 🎯 Lets you select a service and port to expose
+4. 🔗 Creates secure port forwarding to the selected service
+5. 🌐 Establishes an ngrok tunnel for external access
+6. ✅ Provides a public URL for immediate use
+
+## Installation
+
+### Option 1: Download Prebuilt Binary (Recommended)
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/Goalt/service-exporter/releases/latest):
+
+#### Using Package Managers
+
+```bash
+# Coming soon! Package managers support planned for:
+# - Homebrew (brew install goalt/tap/service-exporter)
+# - Scoop (scoop install service-exporter)
+# - APT/YUM repositories
+```
+
+#### Quick Install Script
+
+```bash
+# Auto-detect platform and install (Linux/macOS)
+curl -fsSL https://raw.githubusercontent.com/Goalt/service-exporter/main/install.sh | sh
+```
+> Note: Installation script coming soon!
+
+#### Manual Download
+
+#### Linux (AMD64)
+```bash
+# Download and install
+curl -L -o service-exporter https://github.com/Goalt/service-exporter/releases/latest/download/serviceexporter-linux-amd64
+chmod +x service-exporter
+sudo mv service-exporter /usr/local/bin/
+```
+
+#### Linux (ARM64)
+```bash
+# Download and install
+curl -L -o service-exporter https://github.com/Goalt/service-exporter/releases/latest/download/serviceexporter-linux-arm64
+chmod +x service-exporter
+sudo mv service-exporter /usr/local/bin/
+```
+
+#### macOS (Intel)
+```bash
+# Download and install
+curl -L -o service-exporter https://github.com/Goalt/service-exporter/releases/latest/download/serviceexporter-darwin-amd64
+chmod +x service-exporter
+sudo mv service-exporter /usr/local/bin/
+```
+
+#### macOS (Apple Silicon)
+```bash
+# Download and install
+curl -L -o service-exporter https://github.com/Goalt/service-exporter/releases/latest/download/serviceexporter-darwin-arm64
+chmod +x service-exporter
+sudo mv service-exporter /usr/local/bin/
+```
+
+#### Windows
+1. Download [serviceexporter-windows-amd64.exe](https://github.com/Goalt/service-exporter/releases/latest/download/serviceexporter-windows-amd64.exe)
+2. Rename to `service-exporter.exe`
+3. Add to your PATH or run from the download directory
+
+#### Verify Installation
+```bash
+service-exporter
+# Should start the interactive configuration prompt
+# Press Ctrl+C to exit
+```
+
+### Option 2: Build from Source
+
+Requires Go 1.25+ and access to the source code:
+
+```bash
+git clone https://github.com/Goalt/service-exporter.git
+cd service-exporter
+make build
+```
+
+Or build directly:
+```bash
+go build -o service-exporter ./cmd
+```
+
+## Quick Start
+
+1. **Install** the binary using one of the methods above
+2. **Get your ngrok auth token** from [ngrok.com](https://ngrok.com)
+3. **Run the application**:
+   ```bash
+   service-exporter
+   ```
+4. **Follow the interactive prompts** to configure and expose your service
 
 ## Features
 
@@ -17,7 +140,7 @@ A CLI tool that helps you expose Kubernetes services to the internet using ngrok
 ### Running the Application
 
 ```bash
-go run ./cmd/main.go
+service-exporter
 ```
 
 When you start the application, you'll be presented with a configuration choice:
@@ -43,7 +166,7 @@ Example:
 ```bash
 export NGROK_AUTH_TOKEN="your_ngrok_token_here"
 export KUBECONFIG="/path/to/your/kubeconfig"
-go run ./cmd/main.go
+service-exporter
 ```
 
 #### Option 2: Provide Parameters Manually
@@ -78,7 +201,7 @@ You can now access your service via the public URL above!
 
 ## Prerequisites
 
-- Go 1.24+
+- Go 1.25+ (for building from source)
 - Access to a Kubernetes cluster
 - ngrok account and authentication token
 - Valid kubeconfig file
@@ -94,7 +217,9 @@ You can now access your service via the public URL above!
 ### Building
 
 ```bash
-go build -o service-exporter ./cmd/main.go
+make build
+# or
+go build -o service-exporter ./cmd
 ```
 
 ### Testing
