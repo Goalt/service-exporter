@@ -19,7 +19,7 @@ A CLI tool that helps you expose Kubernetes services to the internet using ngrok
 
 ## Demo
 
-![Service Exporter Demo](https://github.com/Goalt/service-exporter/tree/copilot/fix-12/assets/demo.gif)
+![Service Exporter Demo](https://raw.githubusercontent.com/Goalt/service-exporter/refs/heads/copilot/fix-12/assets/demo.gif)
 
 ## Installation
 
