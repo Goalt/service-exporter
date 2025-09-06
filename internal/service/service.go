@@ -1,13 +1,18 @@
 package service
 
 import (
+	"context"
 	"fmt"
-	"math/rand"
 	"net"
 	"strconv"
 	"strings"
-	"time"
 )
+
+// NgrokClient defines the interface for ngrok client operations
+type NgrokClient interface {
+	StartTunnel(ctx context.Context, port int) (string, error)
+	Close() error
+}
 
 // service implements the Service interface for Kubernetes service operations
 type service struct {
@@ -15,13 +20,15 @@ type service struct {
 	activePort     int
 	activeNgrokURL string
 
-	client K8s
+	client      K8s
+	ngrokClient NgrokClient
 }
 
 // NewService creates a new service instance
-func NewService(client K8s) Service {
+func NewService(client K8s, ngrokClient NgrokClient) Service {
 	return &service{
-		client: client,
+		client:      client,
+		ngrokClient: ngrokClient,
 	}
 }
 
@@ -111,19 +118,21 @@ func (m *service) isPortAvailable(port int) bool {
 	return true
 }
 
-// CreateNgrokSession simulates creating an ngrok session
+// CreateNgrokSession creates an ngrok session for the forwarded port
 func (m *service) CreateNgrokSession(port int) (string, error) {
-	// Simulate some delay
-	time.Sleep(2 * time.Second)
+	fmt.Printf("🌐 Creating ngrok tunnel for port %d...\n", port)
 
-	// Generate a mock ngrok URL
-	randomId := fmt.Sprintf("%x", rand.Uint32())
-	ngrokURL := fmt.Sprintf("https://%s.ngrok.io", randomId)
+	// Use context.Background() since we don't have a context passed in
+	// In a real application, this should be passed from the caller
+	ctx := context.Background()
+
+	ngrokURL, err := m.ngrokClient.StartTunnel(ctx, port)
+	if err != nil {
+		return "", fmt.Errorf("failed to start ngrok tunnel: %w", err)
+	}
 
 	// Store the active ngrok URL
 	m.activeNgrokURL = ngrokURL
-
-	fmt.Printf("🌐 Creating ngrok tunnel for port %d...\n", port)
 
 	return ngrokURL, nil
 }
@@ -134,12 +143,13 @@ func (m *service) Cleanup() error {
 
 	if m.activeNgrokURL != "" {
 		fmt.Printf("🔌 Closing ngrok tunnel: %s\n", m.activeNgrokURL)
-		time.Sleep(500 * time.Millisecond) // Simulate cleanup delay
+		if err := m.ngrokClient.Close(); err != nil {
+			fmt.Printf("Error closing ngrok client: %v\n", err)
+		}
 		m.activeNgrokURL = ""
 	}
 	if m.activeService != "" && m.activePort > 0 {
 		fmt.Printf("🔌 Stopping port forwarding for service '%s' on port %d\n", m.activeService, m.activePort)
-		time.Sleep(500 * time.Millisecond) // Simulate cleanup delay
 		m.activeService = ""
 		m.activePort = 0
 	}

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"fmt"
 	"testing"
 )
 
@@ -22,9 +24,27 @@ func (m *mockK8sClient) PortForward(serviceName string, namespace string, localP
 	return m.err
 }
 
+// mockNgrokClient implements a mock ngrok client for testing
+type mockNgrokClient struct {
+	startTunnelError error
+	closeError       error
+}
+
+func (m *mockNgrokClient) StartTunnel(ctx context.Context, port int) (string, error) {
+	if m.startTunnelError != nil {
+		return "", m.startTunnelError
+	}
+	return fmt.Sprintf("https://mock%d.ngrok.io", port), nil
+}
+
+func (m *mockNgrokClient) Close() error {
+	return m.closeError
+}
+
 func TestNewMockService(t *testing.T) {
 	mockClient := &mockK8sClient{}
-	svc := NewService(mockClient)
+	mockNgrok := &mockNgrokClient{}
+	svc := NewService(mockClient, mockNgrok)
 	if svc == nil {
 		t.Fatal("NewService should return a non-nil service")
 	}
@@ -43,7 +63,8 @@ func TestGetServices(t *testing.T) {
 	mockClient := &mockK8sClient{
 		services: expectedServices,
 	}
-	svc := NewService(mockClient)
+	mockNgrok := &mockNgrokClient{}
+	svc := NewService(mockClient, mockNgrok)
 	services, err := svc.GetServices()
 
 	if err != nil {
@@ -66,7 +87,8 @@ func TestGetServices(t *testing.T) {
 }
 
 func TestGetServicesWithNilClient(t *testing.T) {
-	svc := NewService(nil)
+	mockNgrok := &mockNgrokClient{}
+	svc := NewService(nil, mockNgrok)
 	services, err := svc.GetServices()
 
 	if err == nil {
@@ -80,7 +102,8 @@ func TestGetServicesWithNilClient(t *testing.T) {
 
 func TestStartPortForwarding(t *testing.T) {
 	mockClient := &mockK8sClient{}
-	svc := NewService(mockClient)
+	mockNgrok := &mockNgrokClient{}
+	svc := NewService(mockClient, mockNgrok)
 	// Use the proper format with namespace
 	port, err := svc.StartPortForwarding("test-service (ns: default)")
 
@@ -95,7 +118,8 @@ func TestStartPortForwarding(t *testing.T) {
 
 func TestCreateNgrokSession(t *testing.T) {
 	mockClient := &mockK8sClient{}
-	svc := NewService(mockClient)
+	mockNgrok := &mockNgrokClient{}
+	svc := NewService(mockClient, mockNgrok)
 	url, err := svc.CreateNgrokSession(8080)
 
 	if err != nil {
@@ -114,7 +138,8 @@ func TestCreateNgrokSession(t *testing.T) {
 
 func TestCleanup(t *testing.T) {
 	mockClient := &mockK8sClient{}
-	svc := NewService(mockClient).(*service)
+	mockNgrok := &mockNgrokClient{}
+	svc := NewService(mockClient, mockNgrok).(*service)
 
 	// Start some services to cleanup
 	_, err := svc.StartPortForwarding("test-service (ns: default)")

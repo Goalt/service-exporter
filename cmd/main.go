@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/Goalt/service-exporter/internal/k8s"
+	"github.com/Goalt/service-exporter/internal/ngrok"
 	"github.com/Goalt/service-exporter/internal/prompt"
 	"github.com/Goalt/service-exporter/internal/service"
 )
@@ -20,8 +22,19 @@ func main() {
 	k8sClient, k8sCleanup := k8s.New()
 	defer k8sCleanup()
 
-	// Initialize the service
-	svc := service.NewService(k8sClient)
+	// Initialize the service with required ngrok client
+	ngrokToken := os.Getenv("NGROK_AUTH_TOKEN")
+	if ngrokToken == "" {
+		log.Fatalf("❌ NGROK_AUTH_TOKEN environment variable is required")
+	}
+
+	fmt.Println("🔑 Found ngrok auth token, creating ngrok client")
+	ngrokClient, err := ngrok.NewClient(context.Background(), ngrokToken)
+	if err != nil {
+		log.Fatalf("❌ Failed to create ngrok client: %v", err)
+	}
+
+	svc := service.NewService(k8sClient, ngrokClient)
 
 	// Setup graceful shutdown handling
 	sigChan := make(chan os.Signal, 1)
