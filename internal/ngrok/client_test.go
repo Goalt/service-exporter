@@ -25,9 +25,16 @@ func TestClient_StartTunnel_InvalidToken(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := NewClient(ctx, "invalid_token")
+	client, err := NewClient(ctx, "invalid_token")
+	if err != nil {
+		t.Errorf("NewClient should not fail with invalid token, got: %v", err)
+		return
+	}
+
+	// The error should occur when trying to start a tunnel
+	_, err = client.StartTunnel(ctx, 8080)
 	if err == nil {
-		t.Error("Expected error when creating client with invalid auth token")
+		t.Error("Expected error when starting tunnel with invalid auth token")
 	}
 }
 

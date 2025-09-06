@@ -3,8 +3,6 @@ package ngrok
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/http/httputil"
 	"net/url"
 
 	"golang.ngrok.com/ngrok"
@@ -13,68 +11,45 @@ import (
 
 // Client represents an ngrok client for creating tunnels
 type Client struct {
-	session ngrok.Session
+	authToken string
+	forwarder ngrok.Forwarder
 }
 
 // NewClient creates a new ngrok client
 func NewClient(ctx context.Context, authToken string) (*Client, error) {
-	sessionCh := make(chan ngrok.Session)
-	errCh := make(chan error)
-	go func() {
-		session, err := ngrok.Connect(ctx, ngrok.WithAuthtoken(authToken))
-		if err != nil {
-			errCh <- err
-			return
-		}
-		sessionCh <- session
-	}()
-
-	var session ngrok.Session
-	select {
-	case session = <-sessionCh:
-		// Successfully connected
-	case err := <-errCh:
-		return nil, fmt.Errorf("failed to connect to ngrok: %w", err)
+	if authToken == "" {
+		return nil, fmt.Errorf("auth token is required")
 	}
 
 	return &Client{
-		session: session,
+		authToken: authToken,
 	}, nil
 }
 
 // StartTunnel creates a new HTTP tunnel for the specified port
 func (c *Client) StartTunnel(ctx context.Context, port int) (string, error) {
-	tunnel, err := c.session.Listen(ctx, config.HTTPEndpoint())
+	// Create backend URL
+	backendURL, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse backend URL: %w", err)
+	}
+
+	// Use the simplified ListenAndForward function which handles everything
+	forwarder, err := ngrok.ListenAndForward(ctx, backendURL, config.HTTPEndpoint(), ngrok.WithAuthtoken(c.authToken))
 	if err != nil {
 		return "", fmt.Errorf("failed to create tunnel: %w", err)
 	}
 
-	// Create a reverse proxy to forward requests to localhost:port
-	targetURL, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
-	if err != nil {
-		tunnel.Close()
-		return "", fmt.Errorf("failed to parse target URL: %w", err)
-	}
+	// Store forwarder for cleanup
+	c.forwarder = forwarder
 
-	proxy := httputil.NewSingleHostReverseProxy(targetURL)
-
-	// Start serving the tunnel
-	go func() {
-		defer tunnel.Close()
-		err := http.Serve(tunnel, proxy)
-		if err != nil && err != http.ErrServerClosed {
-			// Log error if needed, but don't block
-			fmt.Printf("Error serving tunnel: %v\n", err)
-		}
-	}()
-
-	return tunnel.URL(), nil
+	return forwarder.URL(), nil
 }
 
-// Close closes the ngrok session
+// Close closes the ngrok forwarder
 func (c *Client) Close() error {
-	if c.session != nil {
-		return c.session.Close()
+	if c.forwarder != nil {
+		return c.forwarder.Close()
 	}
 	return nil
 }
