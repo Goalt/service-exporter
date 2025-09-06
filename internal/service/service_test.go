@@ -19,7 +19,18 @@ func (m *mockK8sClient) ListServices(ctx context.Context) ([]string, error) {
 	return m.services, nil
 }
 
-func (m *mockK8sClient) PortForward(ctx context.Context, serviceName string, namespace string, localPort int) error {
+func (m *mockK8sClient) GetServicePorts(ctx context.Context, serviceName string, namespace string) ([]ServicePort, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	// Return mock ports for testing
+	return []ServicePort{
+		{Name: "http", Port: 80, TargetPort: 8080, Protocol: "TCP"},
+		{Name: "https", Port: 443, TargetPort: 8443, Protocol: "TCP"},
+	}, nil
+}
+
+func (m *mockK8sClient) PortForward(ctx context.Context, serviceName string, namespace string, localPort int, servicePort int32) error {
 	// Mock implementation - just return the error if any
 	return m.err
 }
@@ -100,12 +111,37 @@ func TestGetServicesWithNilClient(t *testing.T) {
 	}
 }
 
+func TestGetServicePorts(t *testing.T) {
+	mockClient := &mockK8sClient{}
+	mockNgrok := &mockNgrokClient{}
+	svc := NewService(mockClient, mockNgrok)
+
+	ports, err := svc.GetServicePorts(context.Background(), "test-service (ns: default)")
+	if err != nil {
+		t.Fatalf("GetServicePorts should not return an error: %v", err)
+	}
+
+	if len(ports) != 2 {
+		t.Fatalf("Expected 2 ports, got %d", len(ports))
+	}
+
+	// Check first port
+	if ports[0].Name != "http" || ports[0].Port != 80 || ports[0].TargetPort != 8080 {
+		t.Errorf("First port should be http:80->8080, got %s:%d->%d", ports[0].Name, ports[0].Port, ports[0].TargetPort)
+	}
+
+	// Check second port
+	if ports[1].Name != "https" || ports[1].Port != 443 || ports[1].TargetPort != 8443 {
+		t.Errorf("Second port should be https:443->8443, got %s:%d->%d", ports[1].Name, ports[1].Port, ports[1].TargetPort)
+	}
+}
+
 func TestStartPortForwarding(t *testing.T) {
 	mockClient := &mockK8sClient{}
 	mockNgrok := &mockNgrokClient{}
 	svc := NewService(mockClient, mockNgrok)
 	// Use the proper format with namespace
-	port, err := svc.StartPortForwarding(context.Background(), "test-service (ns: default)")
+	port, err := svc.StartPortForwarding(context.Background(), "test-service (ns: default)", 80)
 
 	if err != nil {
 		t.Fatalf("StartPortForwarding should not return an error: %v", err)
@@ -142,7 +178,7 @@ func TestCleanup(t *testing.T) {
 	svc := NewService(mockClient, mockNgrok)
 
 	// Start some services to cleanup
-	_, err := svc.StartPortForwarding(context.Background(), "test-service (ns: default)")
+	_, err := svc.StartPortForwarding(context.Background(), "test-service (ns: default)", 80)
 	if err != nil {
 		t.Fatalf("StartPortForwarding should not return an error: %v", err)
 	}

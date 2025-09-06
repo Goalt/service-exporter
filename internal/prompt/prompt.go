@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Goalt/service-exporter/internal/service"
 	"github.com/manifoldco/promptui"
 )
 
@@ -104,4 +105,38 @@ func KubeconfigPathPrompt() (string, error) {
 	}
 
 	return strings.TrimSpace(result), nil
+}
+
+// PortSelectPrompt prompts user to select a port from available service ports
+func PortSelectPrompt(ports []service.ServicePort) (service.ServicePort, error) {
+	if len(ports) == 0 {
+		return service.ServicePort{}, errors.New("no ports available")
+	}
+
+	// If only one port available, auto-select it
+	if len(ports) == 1 {
+		return ports[0], nil
+	}
+
+	// Create display items for ports
+	items := make([]string, len(ports))
+	for i, port := range ports {
+		name := port.Name
+		if name == "" {
+			name = "unnamed"
+		}
+		items[i] = fmt.Sprintf("%s:%d/%s (target: %d)", name, port.Port, port.Protocol, port.TargetPort)
+	}
+
+	prompt := promptui.Select{
+		Label: "Select a port to forward",
+		Items: items,
+	}
+
+	index, _, err := prompt.Run()
+	if err != nil {
+		return service.ServicePort{}, fmt.Errorf("port selection failed: %v", err)
+	}
+
+	return ports[index], nil
 }
