@@ -57,15 +57,17 @@ Select this option to be prompted for each parameter:
 
 1. **Configuration**: Choose your preferred configuration method
 2. **Service Selection**: Select from a list of available Kubernetes services
-3. **Port Forwarding**: The tool automatically forwards the service to a local port
-4. **ngrok Tunnel**: Creates a public URL for external access
-5. **Access**: Use the provided public URL to access your service
+3. **Port Selection**: Choose which port of the selected service to forward
+4. **Port Forwarding**: The tool forwards the selected service port to a local port
+5. **ngrok Tunnel**: Creates a public URL for external access
+6. **Access**: Use the provided public URL to access your service
 
 Example output:
 ```
 🎉 Setup complete!
 ==================
 Service: my-service (ns: default)
+Selected Port: 8080 (http)
 Local Port: 8080
 Public URL: https://abc123.ngrok.io
 

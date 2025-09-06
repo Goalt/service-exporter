@@ -95,6 +95,11 @@ func (a *App) Run(ctx context.Context) error {
 	log.Println("\n🎉 Setup complete!")
 	log.Println("==================")
 	log.Printf("Service: %s\n", selectedK8SService)
+	portName := selectedPort.Name
+	if portName == "" {
+		portName = "unnamed"
+	}
+	log.Printf("Selected Port: %d (%s)\n", selectedPort.Port, portName)
 	log.Printf("Local Port: %d\n", port)
 	log.Printf("Public URL: %s\n", ngrokURL)
 	log.Println("\nYou can now access your service via the public URL above!")
