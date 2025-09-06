@@ -23,9 +23,8 @@ type client struct {
 	config    *rest.Config
 }
 
-func New() (*client, func()) {
-	// Get kubeconfig path from environment variable
-	kubeconfigPath := os.Getenv("KUBECONFIG")
+func New(kubeconfigPath string) (*client, func()) {
+	// Use provided kubeconfig path or fall back to default
 	if kubeconfigPath == "" {
 		// Fall back to default kubeconfig location
 		home, err := os.UserHomeDir()
