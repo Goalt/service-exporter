@@ -20,28 +20,62 @@ type Config struct {
 	KubeconfigPath string
 }
 
-// loadConfig reads all environment variables and returns a Config
-func loadConfig() *Config {
-	return &Config{
-		NgrokAuthToken: os.Getenv("NGROK_AUTH_TOKEN"),
-		KubeconfigPath: os.Getenv("KUBECONFIG"),
+// loadConfig reads configuration from environment variables or prompts user for input
+func loadConfig() (*Config, error) {
+	fmt.Println("\n⚙️  Configuration Setup")
+	fmt.Println("=====================")
+
+	// Ask user if they want to use defaults or provide manual input
+	useDefaults, err := prompt.UseDefaultsPrompt()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get configuration preference: %v", err)
 	}
+
+	config := &Config{}
+
+	if useDefaults {
+		fmt.Println("\n📋 Using environment variables for configuration...")
+		config.NgrokAuthToken = os.Getenv("NGROK_AUTH_TOKEN")
+		config.KubeconfigPath = os.Getenv("KUBECONFIG")
+
+		// Validate required environment variables when using defaults
+		if config.NgrokAuthToken == "" {
+			return nil, fmt.Errorf("❌ NGROK_AUTH_TOKEN environment variable is required when using default configuration")
+		}
+	} else {
+		fmt.Println("\n📝 Manual configuration mode...")
+
+		// Prompt for ngrok auth token
+		config.NgrokAuthToken, err = prompt.NgrokTokenPrompt()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get ngrok auth token: %v", err)
+		}
+
+		// Prompt for kubeconfig path
+		config.KubeconfigPath, err = prompt.KubeconfigPathPrompt()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kubeconfig path: %v", err)
+		}
+	}
+
+	return config, nil
 }
 
 func main() {
 	fmt.Println("🚀 Service Exporter - Kubernetes Service Port Forwarding with ngrok")
 	fmt.Println("================================================================")
 
-	// Load configuration from environment variables
-	config := loadConfig()
-
-	// Validate required environment variables
-	if config.NgrokAuthToken == "" {
-		log.Fatalf("❌ NGROK_AUTH_TOKEN environment variable is required")
+	// Load configuration from prompts or environment variables
+	config, err := loadConfig()
+	if err != nil {
+		log.Fatalf("❌ Configuration failed: %v", err)
 	}
 
 	// create Kubernetes client with kubeconfig path
-	k8sClient, k8sCleanup := k8s.New(config.KubeconfigPath)
+	k8sClient, k8sCleanup, err := k8s.New(config.KubeconfigPath)
+	if err != nil {
+		log.Fatalf("❌ Failed to create Kubernetes client: %v", err)
+	}
 	defer k8sCleanup()
 
 	fmt.Println("🔑 Found ngrok auth token, creating ngrok client")

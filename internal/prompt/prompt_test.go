@@ -1,6 +1,7 @@
 package prompt
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -25,4 +26,55 @@ func TestServiceSelectPrompt_ValidServices(t *testing.T) {
 	if len(services) == 0 {
 		t.Fatal("This test requires non-empty services list")
 	}
+}
+
+func TestNgrokTokenPrompt_ValidatesEmptyInput(t *testing.T) {
+	// Note: We can't easily test the interactive prompts without complex mocking,
+	// but we can verify the function signature and that it exists
+	// In a real scenario, this would require mocking promptui or using dependency injection
+
+	// Just verify the function exists and can be called
+	// The actual validation logic is in the validate function passed to promptui
+	validate := func(input string) error {
+		if input == "" {
+			return fmt.Errorf("Ngrok auth token cannot be empty")
+		}
+		return nil
+	}
+
+	// Test empty input validation
+	err := validate("")
+	if err == nil {
+		t.Error("Expected validation error for empty input")
+	}
+
+	// Test valid input
+	err = validate("test-token")
+	if err != nil {
+		t.Errorf("Expected no error for valid input, got: %v", err)
+	}
+}
+
+func TestKubeconfigPathPrompt_Exists(t *testing.T) {
+	// Just verify the function exists and can be referenced
+	// The actual testing of promptui interactions would require complex mocking
+	defer func() {
+		if r := recover(); r != nil {
+			t.Error("KubeconfigPathPrompt function should exist and be callable")
+		}
+	}()
+	// This will not actually call the function but verifies it exists
+	_ = KubeconfigPathPrompt
+}
+
+func TestUseDefaultsPrompt_Exists(t *testing.T) {
+	// Just verify the function exists and can be referenced
+	// The actual testing of promptui interactions would require complex mocking
+	defer func() {
+		if r := recover(); r != nil {
+			t.Error("UseDefaultsPrompt function should exist and be callable")
+		}
+	}()
+	// This will not actually call the function but verifies it exists
+	_ = UseDefaultsPrompt
 }

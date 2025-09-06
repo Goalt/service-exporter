@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 )
@@ -48,4 +49,58 @@ func ServiceSelectPrompt(services []string) (string, error) {
 	}
 
 	return result, nil
+}
+
+// UseDefaultsPrompt asks user if they want to use default configuration or provide manual input
+func UseDefaultsPrompt() (bool, error) {
+	prompt := promptui.Select{
+		Label: "Configuration mode",
+		Items: []string{"Use default values from environment variables", "Provide parameters manually"},
+	}
+
+	index, _, err := prompt.Run()
+	if err != nil {
+		return false, fmt.Errorf("configuration mode selection failed: %v", err)
+	}
+
+	// Return true if user selected "Use default values" (index 0)
+	return index == 0, nil
+}
+
+// NgrokTokenPrompt prompts user for ngrok auth token
+func NgrokTokenPrompt() (string, error) {
+	validate := func(input string) error {
+		if strings.TrimSpace(input) == "" {
+			return errors.New("Ngrok auth token cannot be empty")
+		}
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label:    "Ngrok Auth Token",
+		Validate: validate,
+		Mask:     '*', // Hide the token input for security
+	}
+
+	result, err := prompt.Run()
+	if err != nil {
+		return "", fmt.Errorf("ngrok token input failed: %v", err)
+	}
+
+	return strings.TrimSpace(result), nil
+}
+
+// KubeconfigPathPrompt prompts user for kubeconfig file path
+func KubeconfigPathPrompt() (string, error) {
+	prompt := promptui.Prompt{
+		Label:   "Kubeconfig file path (press Enter for default)",
+		Default: "", // Empty default means it will use the system default
+	}
+
+	result, err := prompt.Run()
+	if err != nil {
+		return "", fmt.Errorf("kubeconfig path input failed: %v", err)
+	}
+
+	return strings.TrimSpace(result), nil
 }
