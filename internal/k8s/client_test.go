@@ -38,12 +38,8 @@ users:
 		t.Fatalf("Failed to write kubeconfig: %v", err)
 	}
 
-	// Set environment variable
-	os.Setenv("KUBECONFIG", kubeconfigPath)
-	defer os.Unsetenv("KUBECONFIG")
-
-	// Test client creation
-	client, cleanup := New()
+	// Test client creation with explicit kubeconfig path
+	client, cleanup := New(kubeconfigPath)
 	defer cleanup()
 
 	if client == nil {
@@ -56,18 +52,15 @@ users:
 }
 
 func TestNewClient_WithoutKubeconfig(t *testing.T) {
-	// Unset KUBECONFIG environment variable
-	os.Unsetenv("KUBECONFIG")
-
-	// Set a non-existent home directory to avoid finding real kubeconfig
+	// Test client creation with empty kubeconfig path and invalid home directory
 	originalHome, homeExists := os.LookupEnv("HOME")
 	if homeExists {
 		defer os.Setenv("HOME", originalHome)
 	}
 	os.Setenv("HOME", "/non-existent-path")
 
-	// Test client creation
-	client, cleanup := New()
+	// Test client creation with empty kubeconfig path
+	client, cleanup := New("")
 	defer cleanup()
 
 	// Should return nil client when no valid kubeconfig is found

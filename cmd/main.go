@@ -14,22 +14,38 @@ import (
 	"github.com/Goalt/service-exporter/internal/service"
 )
 
+// Config holds all environment configuration
+type Config struct {
+	NgrokAuthToken string
+	KubeconfigPath string
+}
+
+// loadConfig reads all environment variables and returns a Config
+func loadConfig() *Config {
+	return &Config{
+		NgrokAuthToken: os.Getenv("NGROK_AUTH_TOKEN"),
+		KubeconfigPath: os.Getenv("KUBECONFIG"),
+	}
+}
+
 func main() {
 	fmt.Println("🚀 Service Exporter - Kubernetes Service Port Forwarding with ngrok")
 	fmt.Println("================================================================")
 
-	// create Kubernetes client
-	k8sClient, k8sCleanup := k8s.New()
-	defer k8sCleanup()
+	// Load configuration from environment variables
+	config := loadConfig()
 
-	// Initialize the service with required ngrok client
-	ngrokToken := os.Getenv("NGROK_AUTH_TOKEN")
-	if ngrokToken == "" {
+	// Validate required environment variables
+	if config.NgrokAuthToken == "" {
 		log.Fatalf("❌ NGROK_AUTH_TOKEN environment variable is required")
 	}
 
+	// create Kubernetes client with kubeconfig path
+	k8sClient, k8sCleanup := k8s.New(config.KubeconfigPath)
+	defer k8sCleanup()
+
 	fmt.Println("🔑 Found ngrok auth token, creating ngrok client")
-	ngrokClient, err := ngrok.NewClient(context.Background(), ngrokToken)
+	ngrokClient, err := ngrok.NewClient(context.Background(), config.NgrokAuthToken)
 	if err != nil {
 		log.Fatalf("❌ Failed to create ngrok client: %v", err)
 	}
