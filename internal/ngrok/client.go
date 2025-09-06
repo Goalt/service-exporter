@@ -18,8 +18,22 @@ type Client struct {
 
 // NewClient creates a new ngrok client
 func NewClient(ctx context.Context, authToken string) (*Client, error) {
-	session, err := ngrok.Connect(ctx, ngrok.WithAuthtoken(authToken))
-	if err != nil {
+	sessionCh := make(chan ngrok.Session)
+	errCh := make(chan error)
+	go func() {
+		session, err := ngrok.Connect(ctx, ngrok.WithAuthtoken(authToken))
+		if err != nil {
+			errCh <- err
+			return
+		}
+		sessionCh <- session
+	}()
+
+	var session ngrok.Session
+	select {
+	case session = <-sessionCh:
+		// Successfully connected
+	case err := <-errCh:
 		return nil, fmt.Errorf("failed to connect to ngrok: %w", err)
 	}
 
