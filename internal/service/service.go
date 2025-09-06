@@ -36,8 +36,23 @@ func (m *service) GetServices(ctx context.Context) ([]string, error) {
 	return m.client.ListServices(ctx)
 }
 
-// StartPortForwarding starts real port forwarding for a service
-func (m *service) StartPortForwarding(ctx context.Context, serviceName string) (int, error) {
+// GetServicePorts returns available ports for a specific service
+func (m *service) GetServicePorts(ctx context.Context, serviceName string) ([]ServicePort, error) {
+	if m.client == nil {
+		return nil, fmt.Errorf("kubernetes client not available")
+	}
+
+	// Parse service name to extract service name and namespace
+	actualServiceName, namespace, err := m.parseServiceName(serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse service name: %w", err)
+	}
+
+	return m.client.GetServicePorts(ctx, actualServiceName, namespace)
+}
+
+// StartPortForwarding starts real port forwarding for a service and specific port
+func (m *service) StartPortForwarding(ctx context.Context, serviceName string, servicePort int32) (int, error) {
 	if m.client == nil {
 		return 0, fmt.Errorf("kubernetes client not available")
 	}
@@ -56,9 +71,9 @@ func (m *service) StartPortForwarding(ctx context.Context, serviceName string) (
 	}
 
 	// Start port forwarding using the Kubernetes client
-	log.Printf("🔄 Starting port forwarding for service '%s' in namespace '%s' on local port %d...\n", actualServiceName, namespace, localPort)
+	log.Printf("🔄 Starting port forwarding for service '%s' in namespace '%s' on local port %d (service port %d)...\n", actualServiceName, namespace, localPort, servicePort)
 
-	err = m.client.PortForward(ctx, actualServiceName, namespace, localPort)
+	err = m.client.PortForward(ctx, actualServiceName, namespace, localPort, servicePort)
 	if err != nil {
 		return 0, fmt.Errorf("failed to start port forwarding: %w", err)
 	}

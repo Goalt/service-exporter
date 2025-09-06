@@ -17,6 +17,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
+
+	"github.com/Goalt/service-exporter/internal/service"
 )
 
 type client struct {
@@ -72,7 +74,41 @@ func (c *client) ListServices(ctx context.Context) ([]string, error) {
 	return serviceNames, nil
 }
 
-func (c *client) PortForward(ctx context.Context, serviceName string, namespace string, localPort int) error {
+func (c *client) GetServicePorts(ctx context.Context, serviceName string, namespace string) ([]service.ServicePort, error) {
+	if c.clientset == nil {
+		return nil, fmt.Errorf("kubernetes client not initialized")
+	}
+
+	// Get the service to find available ports
+	svc, err := c.clientset.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get service %s in namespace %s: %w", serviceName, namespace, err)
+	}
+
+	if len(svc.Spec.Ports) == 0 {
+		return nil, fmt.Errorf("service %s has no ports defined", serviceName)
+	}
+
+	var servicePorts []service.ServicePort
+	for _, port := range svc.Spec.Ports {
+		targetPort := port.TargetPort.IntVal
+		if targetPort == 0 {
+			// If TargetPort is not specified, use the service port
+			targetPort = port.Port
+		}
+
+		servicePorts = append(servicePorts, service.ServicePort{
+			Name:       port.Name,
+			Port:       port.Port,
+			TargetPort: targetPort,
+			Protocol:   string(port.Protocol),
+		})
+	}
+
+	return servicePorts, nil
+}
+
+func (c *client) PortForward(ctx context.Context, serviceName string, namespace string, localPort int, servicePort int32) error {
 	if c.clientset == nil || c.config == nil {
 		return fmt.Errorf("kubernetes client not initialized")
 	}
@@ -87,8 +123,18 @@ func (c *client) PortForward(ctx context.Context, serviceName string, namespace 
 		return fmt.Errorf("service %s has no ports defined", serviceName)
 	}
 
-	// Use the first port of the service
-	servicePort := svc.Spec.Ports[0]
+	// Find the specific port that matches the requested servicePort
+	var selectedPort *corev1.ServicePort
+	for _, port := range svc.Spec.Ports {
+		if port.Port == servicePort {
+			selectedPort = &port
+			break
+		}
+	}
+
+	if selectedPort == nil {
+		return fmt.Errorf("port %d not found in service %s", servicePort, serviceName)
+	}
 
 	// Find pods that match the service selector
 	pods, err := c.findPodsForService(ctx, svc)
@@ -104,10 +150,10 @@ func (c *client) PortForward(ctx context.Context, serviceName string, namespace 
 	pod := pods[0]
 
 	// Determine the target port on the pod
-	targetPort := servicePort.TargetPort.IntVal
+	targetPort := selectedPort.TargetPort.IntVal
 	if targetPort == 0 {
 		// If TargetPort is not specified, use the service port
-		targetPort = servicePort.Port
+		targetPort = selectedPort.Port
 	}
 
 	// Create port forward request

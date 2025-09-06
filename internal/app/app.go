@@ -64,13 +64,28 @@ func (a *App) Run(ctx context.Context) error {
 
 	log.Printf("\n✅ Selected service: %s\n", selectedK8SService)
 
-	// Step 3: Start port forwarding
-	port, err := a.svc.StartPortForwarding(ctx, selectedK8SService)
+	// Step 3: Get available ports for the selected service
+	log.Println("\n📋 Fetching available ports for the selected service...")
+	servicePorts, err := a.svc.GetServicePorts(ctx, selectedK8SService)
+	if err != nil {
+		return fmt.Errorf("failed to get service ports: %v", err)
+	}
+
+	// Step 4: User selects a port to forward
+	selectedPort, err := prompt.PortSelectPrompt(servicePorts)
+	if err != nil {
+		return fmt.Errorf("port selection failed: %v", err)
+	}
+
+	log.Printf("\n✅ Selected port: %d (%s)\n", selectedPort.Port, selectedPort.Name)
+
+	// Step 5: Start port forwarding
+	port, err := a.svc.StartPortForwarding(ctx, selectedK8SService, selectedPort.Port)
 	if err != nil {
 		return fmt.Errorf("failed to start port forwarding: %v", err)
 	}
 
-	// Step 4: Create ngrok session
+	// Step 6: Create ngrok session
 	ngrokURL, err := a.svc.CreateNgrokSession(ctx, port)
 	if err != nil {
 		return fmt.Errorf("failed to create ngrok session: %v", err)

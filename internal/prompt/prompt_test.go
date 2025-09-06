@@ -3,6 +3,8 @@ package prompt
 import (
 	"fmt"
 	"testing"
+	
+	"github.com/Goalt/service-exporter/internal/service"
 )
 
 func TestServiceSelectPrompt_EmptyServices(t *testing.T) {
@@ -77,4 +79,47 @@ func TestUseDefaultsPrompt_Exists(t *testing.T) {
 	}()
 	// This will not actually call the function but verifies it exists
 	_ = UseDefaultsPrompt
+}
+
+func TestPortSelectPrompt_EmptyPorts(t *testing.T) {
+	ports := []service.ServicePort{}
+	_, err := PortSelectPrompt(ports)
+
+	if err == nil {
+		t.Fatal("PortSelectPrompt should return an error for empty ports list")
+	}
+
+	expectedMsg := "no ports available"
+	if err.Error() != expectedMsg {
+		t.Errorf("Expected error message '%s', got '%s'", expectedMsg, err.Error())
+	}
+}
+
+func TestPortSelectPrompt_SinglePort(t *testing.T) {
+	ports := []service.ServicePort{
+		{Name: "http", Port: 80, TargetPort: 8080, Protocol: "TCP"},
+	}
+	
+	selectedPort, err := PortSelectPrompt(ports)
+	if err != nil {
+		t.Fatalf("PortSelectPrompt should not return an error for single port: %v", err)
+	}
+
+	if selectedPort.Port != 80 {
+		t.Errorf("Expected port 80, got %d", selectedPort.Port)
+	}
+	if selectedPort.Name != "http" {
+		t.Errorf("Expected name 'http', got '%s'", selectedPort.Name)
+	}
+}
+
+func TestPortSelectPrompt_Exists(t *testing.T) {
+	// Just verify the function exists and can be referenced
+	defer func() {
+		if r := recover(); r != nil {
+			t.Error("PortSelectPrompt function should exist and be callable")
+		}
+	}()
+	// This will not actually call the function but verifies it exists
+	_ = PortSelectPrompt
 }
