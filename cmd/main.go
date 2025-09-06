@@ -13,6 +13,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(0)
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
