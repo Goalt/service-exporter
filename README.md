@@ -24,14 +24,29 @@ A CLI tool that helps you expose Kubernetes services to the internet using ngrok
 *Interactive demo showing the complete workflow from service selection to ngrok tunnel creation*
 
 > 📹 **Want to record a real demo?** Use [asciinema](https://asciinema.org/) or [vhs](https://github.com/charmbracelet/vhs) to create an animated terminal recording!
+> 
+> **Example recording command:**
+> ```bash
+> asciinema rec demo.cast -c "service-exporter" --title "Service Exporter Demo"
+> # OR
+> vhs < demo.tape  # Create demo.tape with your recording script
+> ```
 
 Watch how Service Exporter:
 1. 🔧 Prompts for configuration (environment variables or manual input)
-2. 📋 Lists available Kubernetes services in your cluster
+2. 📋 Lists available Kubernetes services in your cluster  
 3. 🎯 Lets you select a service and port to expose
 4. 🔗 Creates secure port forwarding to the selected service
 5. 🌐 Establishes an ngrok tunnel for external access
 6. ✅ Provides a public URL for immediate use
+
+**Demo should show:**
+- Starting the application: `service-exporter`
+- Choosing configuration mode (env vars vs manual)
+- Service selection from a live Kubernetes cluster
+- Port selection and forwarding setup
+- ngrok tunnel creation and public URL generation
+- Final success message with accessible URL
 
 ## Installation
 
@@ -253,6 +268,65 @@ The application provides clear error messages for common issues:
 - **Port forwarding failures**: When unable to establish port forwarding to the selected service
 - **ngrok connection issues**: When unable to create ngrok tunnel
 
+## Troubleshooting
+
+### Common Issues
+
+**Q: "No services found" error**
+```bash
+# Check your kubernetes context
+kubectl config current-context
+kubectl get services --all-namespaces
+```
+
+**Q: ngrok authentication fails**
+```bash
+# Verify your token is set correctly
+echo $NGROK_AUTH_TOKEN
+# Or test ngrok directly
+ngrok config check
+```
+
+**Q: Port forwarding fails**
+```bash
+# Check if service exists and has ports
+kubectl describe service <service-name>
+# Verify cluster connectivity
+kubectl cluster-info
+```
+
+**Q: Permission denied installing binary**
+```bash
+# Install to user directory instead
+curl -L -o ~/bin/service-exporter https://github.com/Goalt/service-exporter/releases/latest/download/serviceexporter-linux-amd64
+chmod +x ~/bin/service-exporter
+export PATH="$HOME/bin:$PATH"
+```
+
+## Contributing
+
+We welcome contributions! Here's how you can help:
+
+1. **🐛 Report Issues**: Found a bug? [Open an issue](https://github.com/Goalt/service-exporter/issues/new)
+2. **💡 Suggest Features**: Have an idea? [Create a feature request](https://github.com/Goalt/service-exporter/issues/new)
+3. **📝 Improve Documentation**: Help make the docs better
+4. **🔧 Submit Code**: Fork, develop, and submit a pull request
+
+### Development Setup
+
+```bash
+# Clone and setup
+git clone https://github.com/Goalt/service-exporter.git
+cd service-exporter
+make deps
+
+# Run tests
+make test
+
+# Build
+make build
+```
+
 ## License
 
-[Add your license information here]
+This project is open source. Please check the repository for license information.
