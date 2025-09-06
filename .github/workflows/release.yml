@@ -27,6 +27,9 @@ jobs:
             suffix: windows-amd64
             ext: .exe
 
+    permissions:
+      contents: write
+
     steps:
     - uses: actions/checkout@v4
     
