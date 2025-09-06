@@ -19,57 +19,13 @@ A CLI tool that helps you expose Kubernetes services to the internet using ngrok
 
 ## Demo
 
-![Service Exporter Demo](https://via.placeholder.com/800x450/1a1a1a/00d4aa?text=Service+Exporter+Demo+GIF)
-
-*Interactive demo showing the complete workflow from service selection to ngrok tunnel creation*
-
-> 📹 **Want to record a real demo?** Use [asciinema](https://asciinema.org/) or [vhs](https://github.com/charmbracelet/vhs) to create an animated terminal recording!
-> 
-> **Example recording command:**
-> ```bash
-> asciinema rec demo.cast -c "service-exporter" --title "Service Exporter Demo"
-> # OR
-> vhs < demo.tape  # Create demo.tape with your recording script
-> ```
-
-Watch how Service Exporter:
-1. 🔧 Prompts for configuration (environment variables or manual input)
-2. 📋 Lists available Kubernetes services in your cluster  
-3. 🎯 Lets you select a service and port to expose
-4. 🔗 Creates secure port forwarding to the selected service
-5. 🌐 Establishes an ngrok tunnel for external access
-6. ✅ Provides a public URL for immediate use
-
-**Demo should show:**
-- Starting the application: `service-exporter`
-- Choosing configuration mode (env vars vs manual)
-- Service selection from a live Kubernetes cluster
-- Port selection and forwarding setup
-- ngrok tunnel creation and public URL generation
-- Final success message with accessible URL
+![Service Exporter Demo](https://github.com/Goalt/service-exporter/tree/copilot/fix-12/assets/demo.gif)
 
 ## Installation
 
 ### Option 1: Download Prebuilt Binary (Recommended)
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/Goalt/service-exporter/releases/latest):
-
-#### Using Package Managers
-
-```bash
-# Coming soon! Package managers support planned for:
-# - Homebrew (brew install goalt/tap/service-exporter)
-# - Scoop (scoop install service-exporter)
-# - APT/YUM repositories
-```
-
-#### Quick Install Script
-
-```bash
-# Auto-detect platform and install (Linux/macOS)
-curl -fsSL https://raw.githubusercontent.com/Goalt/service-exporter/main/install.sh | sh
-```
-> Note: Installation script coming soon!
 
 #### Manual Download
 
@@ -326,7 +282,3 @@ make test
 # Build
 make build
 ```
-
-## License
-
-This project is open source. Please check the repository for license information.
