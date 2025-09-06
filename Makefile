@@ -1,7 +1,7 @@
-# Makefile for serviceexporter Go project
+# Makefile for service-exporter Go project
 
 # Variables
-BINARY_NAME=serviceexporter
+BINARY_NAME=service-exporter
 BUILD_DIR=.
 COVERAGE_FILE=coverage.out
 COVERAGE_HTML=coverage.html

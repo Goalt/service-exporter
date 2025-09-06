@@ -92,7 +92,7 @@ You can now access your service via the public URL above!
 ### Building
 
 ```bash
-go build -o serviceexporter ./cmd/main.go
+go build -o service-exporter ./cmd/main.go
 ```
 
 ### Testing
