@@ -6,6 +6,7 @@ toolchain go1.24.6
 
 require (
 	github.com/manifoldco/promptui v0.9.0
+	github.com/oklog/run v1.2.0
 	golang.ngrok.com/ngrok v1.13.0
 	k8s.io/api v0.34.0
 	k8s.io/apimachinery v0.34.0
