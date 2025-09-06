@@ -68,20 +68,20 @@ func main() {
 	// Load configuration from prompts or environment variables
 	config, err := loadConfig()
 	if err != nil {
-		log.Fatalf("❌ Configuration failed: %v", err)
+		log.Panicf("❌ Configuration failed: %v", err)
 	}
 
 	// create Kubernetes client with kubeconfig path
 	k8sClient, k8sCleanup, err := k8s.New(config.KubeconfigPath)
 	if err != nil {
-		log.Fatalf("❌ Failed to create Kubernetes client: %v", err)
+		log.Panicf("❌ Failed to create Kubernetes client: %v", err)
 	}
 	defer k8sCleanup()
 
 	log.Println("🔑 Found ngrok auth token, creating ngrok client")
 	ngrokClient, err := ngrok.NewClient(context.Background(), config.NgrokAuthToken)
 	if err != nil {
-		log.Fatalf("❌ Failed to create ngrok client: %v", err)
+		log.Panicf("❌ Failed to create ngrok client: %v", err)
 	}
 
 	svc := service.NewService(k8sClient, ngrokClient)
@@ -109,13 +109,13 @@ func main() {
 	log.Println("\n📋 Fetching available Kubernetes services...")
 	services, err := svc.GetServices()
 	if err != nil {
-		log.Fatalf("Failed to get services: %v", err)
+		log.Panicf("Failed to get services: %v", err)
 	}
 
 	// Step 2: User selects a service
 	selectedService, err := prompt.ServiceSelectPrompt(services)
 	if err != nil {
-		log.Fatalf("Service selection failed: %v", err)
+		log.Panicf("Service selection failed: %v", err)
 	}
 
 	log.Printf("\n✅ Selected service: %s\n", selectedService)
@@ -123,13 +123,13 @@ func main() {
 	// Step 3: Start port forwarding
 	port, err := svc.StartPortForwarding(selectedService)
 	if err != nil {
-		log.Fatalf("Failed to start port forwarding: %v", err)
+		log.Panicf("Failed to start port forwarding: %v", err)
 	}
 
 	// Step 4: Create ngrok session
 	ngrokURL, err := svc.CreateNgrokSession(port)
 	if err != nil {
-		log.Fatalf("Failed to create ngrok session: %v", err)
+		log.Panicf("Failed to create ngrok session: %v", err)
 	}
 
 	// Display final result
