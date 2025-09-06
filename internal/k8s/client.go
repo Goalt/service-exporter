@@ -23,14 +23,14 @@ type client struct {
 	config    *rest.Config
 }
 
-func New(kubeconfigPath string) (*client, func()) {
+func New(kubeconfigPath string) (*client, func(), error) {
 	// Use provided kubeconfig path or fall back to default
 	if kubeconfigPath == "" {
 		// Fall back to default kubeconfig location
 		home, err := os.UserHomeDir()
 		if err != nil {
 			fmt.Printf("Warning: could not get home directory: %v\n", err)
-			return nil, func() {}
+			return nil, func() {}, fmt.Errorf("kubeconfig path not provided and could not determine home directory")
 		}
 		kubeconfigPath = filepath.Join(home, ".kube", "config")
 	}
@@ -39,17 +39,17 @@ func New(kubeconfigPath string) (*client, func()) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		fmt.Printf("Warning: could not build config from kubeconfig: %v\n", err)
-		return nil, func() {}
+		return nil, func() {}, fmt.Errorf("failed to build kubeconfig from path %s: %w", kubeconfigPath, err)
 	}
 
 	// Create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		fmt.Printf("Warning: could not create kubernetes client: %v\n", err)
-		return nil, func() {}
+		return nil, func() {}, fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
-	return &client{clientset: clientset, config: config}, func() {}
+	return &client{clientset: clientset, config: config}, func() {}, nil
 }
 
 func (c *client) ListServices() ([]string, error) {

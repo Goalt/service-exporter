@@ -39,7 +39,10 @@ users:
 	}
 
 	// Test client creation with explicit kubeconfig path
-	client, cleanup := New(kubeconfigPath)
+	client, cleanup, err := New(kubeconfigPath)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer cleanup()
 
 	if client == nil {
@@ -60,7 +63,10 @@ func TestNewClient_WithoutKubeconfig(t *testing.T) {
 	os.Setenv("HOME", "/non-existent-path")
 
 	// Test client creation with empty kubeconfig path
-	client, cleanup := New("")
+	client, cleanup, err := New("")
+	if err == nil {
+		t.Error("Expected error when no kubeconfig is available, got nil")
+	}
 	defer cleanup()
 
 	// Should return nil client when no valid kubeconfig is found

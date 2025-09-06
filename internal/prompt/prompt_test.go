@@ -32,7 +32,7 @@ func TestNgrokTokenPrompt_ValidatesEmptyInput(t *testing.T) {
 	// Note: We can't easily test the interactive prompts without complex mocking,
 	// but we can verify the function signature and that it exists
 	// In a real scenario, this would require mocking promptui or using dependency injection
-	
+
 	// Just verify the function exists and can be called
 	// The actual validation logic is in the validate function passed to promptui
 	validate := func(input string) error {
@@ -41,13 +41,13 @@ func TestNgrokTokenPrompt_ValidatesEmptyInput(t *testing.T) {
 		}
 		return nil
 	}
-	
+
 	// Test empty input validation
 	err := validate("")
 	if err == nil {
 		t.Error("Expected validation error for empty input")
 	}
-	
+
 	// Test valid input
 	err = validate("test-token")
 	if err != nil {
