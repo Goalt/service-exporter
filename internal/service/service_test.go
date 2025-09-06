@@ -12,14 +12,14 @@ type mockK8sClient struct {
 	err      error
 }
 
-func (m *mockK8sClient) ListServices() ([]string, error) {
+func (m *mockK8sClient) ListServices(ctx context.Context) ([]string, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
 	return m.services, nil
 }
 
-func (m *mockK8sClient) PortForward(serviceName string, namespace string, localPort int) error {
+func (m *mockK8sClient) PortForward(ctx context.Context, serviceName string, namespace string, localPort int) error {
 	// Mock implementation - just return the error if any
 	return m.err
 }
@@ -65,7 +65,7 @@ func TestGetServices(t *testing.T) {
 	}
 	mockNgrok := &mockNgrokClient{}
 	svc := NewService(mockClient, mockNgrok)
-	services, err := svc.GetServices()
+	services, err := svc.GetServices(context.Background())
 
 	if err != nil {
 		t.Fatalf("GetServices should not return an error: %v", err)
@@ -89,7 +89,7 @@ func TestGetServices(t *testing.T) {
 func TestGetServicesWithNilClient(t *testing.T) {
 	mockNgrok := &mockNgrokClient{}
 	svc := NewService(nil, mockNgrok)
-	services, err := svc.GetServices()
+	services, err := svc.GetServices(context.Background())
 
 	if err == nil {
 		t.Fatal("GetServices should return an error when client is nil")
@@ -105,7 +105,7 @@ func TestStartPortForwarding(t *testing.T) {
 	mockNgrok := &mockNgrokClient{}
 	svc := NewService(mockClient, mockNgrok)
 	// Use the proper format with namespace
-	port, err := svc.StartPortForwarding("test-service (ns: default)")
+	port, err := svc.StartPortForwarding(context.Background(), "test-service (ns: default)")
 
 	if err != nil {
 		t.Fatalf("StartPortForwarding should not return an error: %v", err)
@@ -120,7 +120,7 @@ func TestCreateNgrokSession(t *testing.T) {
 	mockClient := &mockK8sClient{}
 	mockNgrok := &mockNgrokClient{}
 	svc := NewService(mockClient, mockNgrok)
-	url, err := svc.CreateNgrokSession(8080)
+	url, err := svc.CreateNgrokSession(context.Background(), 8080)
 
 	if err != nil {
 		t.Fatalf("CreateNgrokSession should not return an error: %v", err)
@@ -139,14 +139,14 @@ func TestCreateNgrokSession(t *testing.T) {
 func TestCleanup(t *testing.T) {
 	mockClient := &mockK8sClient{}
 	mockNgrok := &mockNgrokClient{}
-	svc := NewService(mockClient, mockNgrok).(*service)
+	svc := NewService(mockClient, mockNgrok)
 
 	// Start some services to cleanup
-	_, err := svc.StartPortForwarding("test-service (ns: default)")
+	_, err := svc.StartPortForwarding(context.Background(), "test-service (ns: default)")
 	if err != nil {
 		t.Fatalf("StartPortForwarding should not return an error: %v", err)
 	}
-	_, err = svc.CreateNgrokSession(8080)
+	_, err = svc.CreateNgrokSession(context.Background(), 8080)
 	if err != nil {
 		t.Fatalf("CreateNgrokSession should not return an error: %v", err)
 	}

@@ -9,12 +9,6 @@ import (
 	"strings"
 )
 
-// NgrokClient defines the interface for ngrok client operations
-type NgrokClient interface {
-	StartTunnel(ctx context.Context, port int) (string, error)
-	Close() error
-}
-
 // service implements the Service interface for Kubernetes service operations
 type service struct {
 	activeService  string
@@ -26,7 +20,7 @@ type service struct {
 }
 
 // NewService creates a new service instance
-func NewService(client K8s, ngrokClient NgrokClient) Service {
+func NewService(client K8s, ngrokClient NgrokClient) *service {
 	return &service{
 		client:      client,
 		ngrokClient: ngrokClient,
@@ -34,16 +28,16 @@ func NewService(client K8s, ngrokClient NgrokClient) Service {
 }
 
 // GetServices returns a list of Kubernetes services from the cluster
-func (m *service) GetServices() ([]string, error) {
+func (m *service) GetServices(ctx context.Context) ([]string, error) {
 	if m.client == nil {
 		return nil, fmt.Errorf("kubernetes client not available")
 	}
 
-	return m.client.ListServices()
+	return m.client.ListServices(ctx)
 }
 
 // StartPortForwarding starts real port forwarding for a service
-func (m *service) StartPortForwarding(serviceName string) (int, error) {
+func (m *service) StartPortForwarding(ctx context.Context, serviceName string) (int, error) {
 	if m.client == nil {
 		return 0, fmt.Errorf("kubernetes client not available")
 	}
@@ -64,7 +58,7 @@ func (m *service) StartPortForwarding(serviceName string) (int, error) {
 	// Start port forwarding using the Kubernetes client
 	log.Printf("🔄 Starting port forwarding for service '%s' in namespace '%s' on local port %d...\n", actualServiceName, namespace, localPort)
 
-	err = m.client.PortForward(actualServiceName, namespace, localPort)
+	err = m.client.PortForward(ctx, actualServiceName, namespace, localPort)
 	if err != nil {
 		return 0, fmt.Errorf("failed to start port forwarding: %w", err)
 	}
@@ -121,12 +115,8 @@ func (m *service) isPortAvailable(port int) bool {
 }
 
 // CreateNgrokSession creates an ngrok session for the forwarded port
-func (m *service) CreateNgrokSession(port int) (string, error) {
+func (m *service) CreateNgrokSession(ctx context.Context, port int) (string, error) {
 	log.Printf("🌐 Creating ngrok tunnel for port %d...\n", port)
-
-	// Use context.Background() since we don't have a context passed in
-	// In a real application, this should be passed from the caller
-	ctx := context.Background()
 
 	ngrokURL, err := m.ngrokClient.StartTunnel(ctx, port)
 	if err != nil {
@@ -148,13 +138,12 @@ func (m *service) Cleanup() error {
 		if err := m.ngrokClient.Close(); err != nil {
 			log.Printf("Error closing ngrok client: %v\n", err)
 		}
-		m.activeNgrokURL = ""
 	}
-	if m.activeService != "" && m.activePort > 0 {
-		log.Printf("🔌 Stopping port forwarding for service '%s' on port %d\n", m.activeService, m.activePort)
-		m.activeService = ""
-		m.activePort = 0
-	}
+
+	// Reset active session state
+	m.activeService = ""
+	m.activePort = 0
+	m.activeNgrokURL = ""
 
 	log.Println("✅ Graceful shutdown completed")
 	return nil

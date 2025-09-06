@@ -16,7 +16,7 @@ type Client struct {
 }
 
 // NewClient creates a new ngrok client
-func NewClient(ctx context.Context, authToken string) (*Client, error) {
+func NewClient(authToken string) (*Client, error) {
 	if authToken == "" {
 		return nil, fmt.Errorf("auth token is required")
 	}

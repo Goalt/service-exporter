@@ -11,10 +11,8 @@ func TestClient_StartTunnel(t *testing.T) {
 	// We'll create a basic unit test that checks the interface
 
 	// Test that we can create a client with empty auth token (should fail)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
-	_, err := NewClient(ctx, "")
+	_, err := NewClient("")
 	if err == nil {
 		t.Error("Expected error when creating client with empty auth token")
 	}
@@ -25,7 +23,7 @@ func TestClient_StartTunnel_InvalidToken(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	client, err := NewClient(ctx, "invalid_token")
+	client, err := NewClient("invalid_token")
 	if err != nil {
 		t.Errorf("NewClient should not fail with invalid token, got: %v", err)
 		return

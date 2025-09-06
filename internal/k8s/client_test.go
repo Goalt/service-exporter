@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,11 +40,10 @@ users:
 	}
 
 	// Test client creation with explicit kubeconfig path
-	client, cleanup, err := New(kubeconfigPath)
+	client, err := New(kubeconfigPath)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
-	defer cleanup()
 
 	if client == nil {
 		t.Error("Expected client to be created, got nil")
@@ -63,11 +63,10 @@ func TestNewClient_WithoutKubeconfig(t *testing.T) {
 	os.Setenv("HOME", "/non-existent-path")
 
 	// Test client creation with empty kubeconfig path
-	client, cleanup, err := New("")
+	client, err := New("")
 	if err == nil {
 		t.Error("Expected error when no kubeconfig is available, got nil")
 	}
-	defer cleanup()
 
 	// Should return nil client when no valid kubeconfig is found
 	if client != nil {
@@ -78,7 +77,7 @@ func TestNewClient_WithoutKubeconfig(t *testing.T) {
 func TestListServices_WithNilClient(t *testing.T) {
 	client := &client{clientset: nil}
 
-	services, err := client.ListServices()
+	services, err := client.ListServices(context.Background())
 
 	if err == nil {
 		t.Error("Expected error when clientset is nil, got nil")

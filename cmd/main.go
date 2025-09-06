@@ -68,20 +68,22 @@ func main() {
 	// Load configuration from prompts or environment variables
 	config, err := loadConfig()
 	if err != nil {
-		log.Panicf("❌ Configuration failed: %v", err)
+		log.Printf("❌ Configuration failed: %v", err)
+		return
 	}
 
 	// create Kubernetes client with kubeconfig path
-	k8sClient, k8sCleanup, err := k8s.New(config.KubeconfigPath)
+	k8sClient, err := k8s.New(config.KubeconfigPath)
 	if err != nil {
-		log.Panicf("❌ Failed to create Kubernetes client: %v", err)
+		log.Printf("❌ Failed to create Kubernetes client: %v", err)
+		return
 	}
-	defer k8sCleanup()
 
 	log.Println("🔑 Found ngrok auth token, creating ngrok client")
-	ngrokClient, err := ngrok.NewClient(context.Background(), config.NgrokAuthToken)
+	ngrokClient, err := ngrok.NewClient(config.NgrokAuthToken)
 	if err != nil {
-		log.Panicf("❌ Failed to create ngrok client: %v", err)
+		log.Printf("❌ Failed to create ngrok client: %v", err)
+		return
 	}
 
 	svc := service.NewService(k8sClient, ngrokClient)
@@ -90,8 +92,12 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	// create a context that is canceled on interrupt signal
+	ctx, cancel := context.WithCancel(context.Background())
+
 	// Setup cleanup function
 	cleanup := func() {
+		cancel()
 		if err := svc.Cleanup(); err != nil {
 			log.Printf("Error during cleanup: %v", err)
 		}
@@ -107,35 +113,39 @@ func main() {
 
 	// Step 1: Get list of Kubernetes services
 	log.Println("\n📋 Fetching available Kubernetes services...")
-	services, err := svc.GetServices()
+	k8sServices, err := svc.GetServices(ctx)
 	if err != nil {
-		log.Panicf("Failed to get services: %v", err)
+		log.Printf("Failed to get services: %v", err)
+		return
 	}
 
 	// Step 2: User selects a service
-	selectedService, err := prompt.ServiceSelectPrompt(services)
+	selectedK8SService, err := prompt.ServiceSelectPrompt(k8sServices)
 	if err != nil {
-		log.Panicf("Service selection failed: %v", err)
+		log.Printf("Service selection failed: %v", err)
+		return
 	}
 
-	log.Printf("\n✅ Selected service: %s\n", selectedService)
+	log.Printf("\n✅ Selected service: %s\n", selectedK8SService)
 
 	// Step 3: Start port forwarding
-	port, err := svc.StartPortForwarding(selectedService)
+	port, err := svc.StartPortForwarding(ctx, selectedK8SService)
 	if err != nil {
-		log.Panicf("Failed to start port forwarding: %v", err)
+		log.Printf("Failed to start port forwarding: %v", err)
+		return
 	}
 
 	// Step 4: Create ngrok session
-	ngrokURL, err := svc.CreateNgrokSession(port)
+	ngrokURL, err := svc.CreateNgrokSession(ctx, port)
 	if err != nil {
-		log.Panicf("Failed to create ngrok session: %v", err)
+		log.Printf("Failed to create ngrok session: %v", err)
+		return
 	}
 
 	// Display final result
 	log.Println("\n🎉 Setup complete!")
 	log.Println("==================")
-	log.Printf("Service: %s\n", selectedService)
+	log.Printf("Service: %s\n", selectedK8SService)
 	log.Printf("Local Port: %d\n", port)
 	log.Printf("Public URL: %s\n", ngrokURL)
 	log.Println("\nYou can now access your service via the public URL above!")

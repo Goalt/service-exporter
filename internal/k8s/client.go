@@ -24,13 +24,13 @@ type client struct {
 	config    *rest.Config
 }
 
-func New(kubeconfigPath string) (*client, func(), error) {
+func New(kubeconfigPath string) (*client, error) {
 	// Use provided kubeconfig path or fall back to default
 	if kubeconfigPath == "" {
 		// Fall back to default kubeconfig location
 		home, err := os.UserHomeDir()
 		if err != nil {
-			return nil, func() {}, fmt.Errorf("kubeconfig path not provided and could not determine home directory")
+			return nil, fmt.Errorf("kubeconfig path not provided and could not determine home directory: %w", err)
 		}
 
 		kubeconfigPath = filepath.Join(home, ".kube", "config")
@@ -39,25 +39,25 @@ func New(kubeconfigPath string) (*client, func(), error) {
 	// Build config from kubeconfig file
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
-		return nil, func() {}, fmt.Errorf("failed to build kubeconfig from path %s: %w", kubeconfigPath, err)
+		return nil, fmt.Errorf("failed to build kubeconfig from path %s: %w", kubeconfigPath, err)
 	}
 
 	// Create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, func() {}, fmt.Errorf("failed to create kubernetes client: %w", err)
+		return nil, fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
-	return &client{clientset: clientset, config: config}, func() {}, nil
+	return &client{clientset: clientset, config: config}, nil
 }
 
-func (c *client) ListServices() ([]string, error) {
+func (c *client) ListServices(ctx context.Context) ([]string, error) {
 	if c.clientset == nil {
 		return nil, fmt.Errorf("kubernetes client not initialized")
 	}
 
 	// List services in all namespaces
-	services, err := c.clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
+	services, err := c.clientset.CoreV1().Services("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list services: %w", err)
 	}
@@ -72,13 +72,13 @@ func (c *client) ListServices() ([]string, error) {
 	return serviceNames, nil
 }
 
-func (c *client) PortForward(serviceName string, namespace string, localPort int) error {
+func (c *client) PortForward(ctx context.Context, serviceName string, namespace string, localPort int) error {
 	if c.clientset == nil || c.config == nil {
 		return fmt.Errorf("kubernetes client not initialized")
 	}
 
 	// Get the service to find target port
-	svc, err := c.clientset.CoreV1().Services(namespace).Get(context.TODO(), serviceName, metav1.GetOptions{})
+	svc, err := c.clientset.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get service %s in namespace %s: %w", serviceName, namespace, err)
 	}
@@ -91,7 +91,7 @@ func (c *client) PortForward(serviceName string, namespace string, localPort int
 	servicePort := svc.Spec.Ports[0]
 
 	// Find pods that match the service selector
-	pods, err := c.findPodsForService(svc)
+	pods, err := c.findPodsForService(ctx, svc)
 	if err != nil {
 		return fmt.Errorf("failed to find pods for service %s: %w", serviceName, err)
 	}
@@ -155,11 +155,11 @@ func (c *client) PortForward(serviceName string, namespace string, localPort int
 	}
 }
 
-func (c *client) findPodsForService(svc *corev1.Service) ([]corev1.Pod, error) {
+func (c *client) findPodsForService(ctx context.Context, svc *corev1.Service) ([]corev1.Pod, error) {
 	// Convert service selector to label selector string
 	labelSelector := metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: svc.Spec.Selector})
 
-	pods, err := c.clientset.CoreV1().Pods(svc.Namespace).List(context.TODO(), metav1.ListOptions{
+	pods, err := c.clientset.CoreV1().Pods(svc.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
