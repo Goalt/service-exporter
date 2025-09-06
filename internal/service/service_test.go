@@ -115,7 +115,7 @@ func TestGetServicePorts(t *testing.T) {
 	mockClient := &mockK8sClient{}
 	mockNgrok := &mockNgrokClient{}
 	svc := NewService(mockClient, mockNgrok)
-	
+
 	ports, err := svc.GetServicePorts(context.Background(), "test-service (ns: default)")
 	if err != nil {
 		t.Fatalf("GetServicePorts should not return an error: %v", err)

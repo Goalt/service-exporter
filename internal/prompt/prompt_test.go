@@ -3,7 +3,7 @@ package prompt
 import (
 	"fmt"
 	"testing"
-	
+
 	"github.com/Goalt/service-exporter/internal/service"
 )
 
@@ -99,7 +99,7 @@ func TestPortSelectPrompt_SinglePort(t *testing.T) {
 	ports := []service.ServicePort{
 		{Name: "http", Port: 80, TargetPort: 8080, Protocol: "TCP"},
 	}
-	
+
 	selectedPort, err := PortSelectPrompt(ports)
 	if err != nil {
 		t.Fatalf("PortSelectPrompt should not return an error for single port: %v", err)

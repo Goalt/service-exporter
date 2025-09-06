@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/manifoldco/promptui"
 	"github.com/Goalt/service-exporter/internal/service"
+	"github.com/manifoldco/promptui"
 )
 
 // NumberPrompt prompts for a number input with validation
