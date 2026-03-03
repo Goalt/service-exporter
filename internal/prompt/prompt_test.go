@@ -30,6 +30,35 @@ func TestServiceSelectPrompt_ValidServices(t *testing.T) {
 	}
 }
 
+func TestServiceSelectPrompt_Searcher(t *testing.T) {
+	services := []string{"my-api (ns: default)", "backend-service (ns: staging)", "My-Frontend (ns: production)"}
+
+	searcher := serviceSearcher(services)
+
+	tests := []struct {
+		input    string
+		index    int
+		expected bool
+	}{
+		{"api", 0, true},
+		{"api", 1, false},
+		{"backend", 1, true},
+		{"BACKEND", 1, true},
+		{"my", 0, true},
+		{"my", 2, true},
+		{"my", 1, false},
+		{"", 0, true},
+		{"xyz", 0, false},
+	}
+
+	for _, tt := range tests {
+		result := searcher(tt.input, tt.index)
+		if result != tt.expected {
+			t.Errorf("searcher(%q, %d) = %v, want %v", tt.input, tt.index, result, tt.expected)
+		}
+	}
+}
+
 func TestNgrokTokenPrompt_ValidatesEmptyInput(t *testing.T) {
 	// Note: We can't easily test the interactive prompts without complex mocking,
 	// but we can verify the function signature and that it exists

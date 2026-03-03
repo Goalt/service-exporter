@@ -34,6 +34,13 @@ func NumberPrompt() (string, error) {
 	return result, nil
 }
 
+// serviceSearcher returns a searcher function for case-insensitive service name filtering
+func serviceSearcher(services []string) func(string, int) bool {
+	return func(input string, index int) bool {
+		return strings.Contains(strings.ToLower(services[index]), strings.ToLower(input))
+	}
+}
+
 // ServiceSelectPrompt prompts user to select a Kubernetes service
 func ServiceSelectPrompt(services []string) (string, error) {
 	if len(services) == 0 {
@@ -41,8 +48,10 @@ func ServiceSelectPrompt(services []string) (string, error) {
 	}
 
 	prompt := promptui.Select{
-		Label: "Select a Kubernetes service",
-		Items: services,
+		Label:             "Select a Kubernetes service",
+		Items:             services,
+		Searcher:          serviceSearcher(services),
+		StartInSearchMode: true,
 	}
 
 	_, result, err := prompt.Run()
